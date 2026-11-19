@@ -1,4 +1,4 @@
-# Final Fantasy X-2 Decompilation (SLUS-20672)
+# dressphere — a Final Fantasy X-2 decompilation (SLUS-20672)
 
 A work-in-progress **matching decompilation** of *Final Fantasy X-2* (PS2, USA/Canada).
 The goal is C source that recompiles, with the original compiler, into a byte-identical
