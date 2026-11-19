@@ -34,11 +34,11 @@ mips-linux-gnu-objcopy -O binary --gap-fill=0x00 iso/files/SLUS_206.72 iso/SLUS_
 python3 -m venv .venv
 .venv/bin/pip install "splat64[mips]" spimdisasm "git+https://github.com/matt-kempster/m2c.git"
 
-# 3. Candidate original compiler (decomp.me's archive; not final, see docs/COMPILER.md,
-#    which also covers running these 32-bit binaries without root)
-mkdir -p tools/compilers/ee-gcc2.96
-curl -L https://github.com/decompme/compilers/releases/download/compilers/ee-gcc2.96.tar.xz \
-  | tar -xJ -C tools/compilers/ee-gcc2.96
+# 3. Original compiler (Sony ee-gcc 2.9-ee-991111) + local 32-bit glibc to run it
+(cd /tmp && apt-get download libc6-i386) && dpkg-deb -x /tmp/libc6-i386_*.deb tools/i386
+mkdir -p tools/compilers/ee-gcc2.9-991111
+curl -L https://github.com/decompme/compilers/releases/download/compilers/ee-gcc2.9-991111.tar.xz \
+  | tar -xJ -C tools/compilers/ee-gcc2.9-991111
 
 # 4. Split + build + verify
 .venv/bin/python configure.py
@@ -52,10 +52,20 @@ ninja            # prints nothing on success; build/SLUS_206.72.ok = "OK: matche
 | `ffx2.yaml` | splat configuration (segments, section order, options) |
 | `symbol_addrs.txt` | named symbols (`name = 0xADDR; // type:func`) |
 | `configure.py` | runs splat, patches the linker script, writes `build.ninja` |
-| `src/` | decompiled C |
+| `src/` | decompiled C (`INCLUDE_ASM` for functions not yet done) |
 | `include/` | headers (`include_asm.h`, `macro.inc`, SDK headers) |
 | `tools/splat_ext/` | custom splat segment types (`vutext` for VU1 microcode) |
 | `asm/`, `assets/`, `build/` | generated, not committed |
+
+## Working on a function
+
+```bash
+.venv/bin/python tools/matchcheck.py src/code_12AB30.c   # per-function compare vs retail
+ninja                                                     # whole image must still match
+.venv/bin/python tools/progress.py
+```
+
+Compiler details and how it was identified: [docs/COMPILER.md](docs/COMPILER.md).
 
 ## Notes on the build
 

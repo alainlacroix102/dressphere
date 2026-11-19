@@ -5,11 +5,11 @@
 - [x] splat config; full disassembly (about 12,570 functions)
 - [x] Reassemble and relink to a **byte-identical** image (SHA1 checked by `ninja`)
 
-## Phase 1 — Compiler identification (in progress, see docs/COMPILER.md)
+## Phase 1 — Compiler identification ✅ (see [COMPILER.md](COMPILER.md))
 - [x] Download candidate EE compilers and get them running (see [COMPILER.md](COMPILER.md))
-- [ ] Find the exact compiler and flags (closest so far: ee-gcc 2.96)
-- [ ] Match about 10 small leaf functions with each candidate and flag set (`-O2 -G0`, …);
-      record the winner in `docs/COMPILER.md`
+- [x] Find the exact compiler and flags: **ee-gcc 2.9-ee-991111, `-O2 -G0`**
+- [x] Byte-level checker (`tools/matchcheck.py`) and build driver (`tools/eecc.py`)
+- [x] First functions decompiled; full image still matches (`tools/progress.py`)
 - [ ] Wire up asm-differ (`diff_settings.py`) and m2c context generation
 
 ## Phase 2 — Structure
