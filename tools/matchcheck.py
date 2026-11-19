@@ -69,7 +69,8 @@ def objdump_funcs(obj: Path) -> dict[str, list[tuple[int, str | None]]]:
 
 
 MASK = {"R_MIPS_26": 0xFC000000, "R_MIPS_HI16": 0xFFFF0000,
-        "R_MIPS_LO16": 0xFFFF0000, "R_MIPS_GPREL16": 0xFFFF0000}
+        "R_MIPS_LO16": 0xFFFF0000, "R_MIPS_GPREL16": 0xFFFF0000,
+        "R_MIPS_LITERAL": 0xFFFF0000}
 
 
 def compare(name: str, ours: list, rom: bytes, addr: int) -> tuple[bool, int]:

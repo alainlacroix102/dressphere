@@ -22,10 +22,10 @@ typedef struct {
 extern Unk3596B0 *D_003596B0;
 extern s32 D_0049B460[];
 extern s32 D_0035473C;
-extern s32 D_0049B4B4;
-extern s32 D_0049B4B8;
-extern s32 D_0049B4BC;
-extern s32 D_0049B4C0;
+extern s16 *D_0049B4B4;
+extern s16 *D_0049B4B8;
+extern s16 *D_0049B4BC;
+extern s16 *D_0049B4C0;
 extern f32 D_0049B4C4;
 extern f32 D_0049B4D0;
 extern s32 D_0049B4D4;
@@ -37,13 +37,15 @@ extern f32 D_003596D0;
 
 extern void func_00117160(void *, f32);
 extern void func_001176E8(void *, f32);
-extern void func_00117838(void *);
+extern void func_00117838(void *, f32);
+extern void func_003202A0(f32 *, f32 *);
+extern double atan2(double, double);
 extern void func_0011BD10(void *, s32);
 extern s32 func_00107508(void *, s32, s32);
 extern s32 func_001079E0(void *, s32, s32, s32, s32, s32);
 extern f32 func_0011D748(s32);
 extern UnkObj *func_0011D300(void);
-f32 func_0012AC70(void *, s32, s32);
+f32 func_0012AC70(void *, s16 *, s16 *);
 void func_0012AE50(void *);
 s32 func_0012AE98(UnkObj *, f32);
 
@@ -55,8 +57,6 @@ s32 func_0012AB30(s32 i) {
     }
     return v;
 }
-
-INCLUDE_RODATA("asm/nonmatchings/code_12AB30", D_0047B190);
 
 s32 func_0012AB78(UnkObj *p, s32 i) {
     u32 type = D_003596B0[i].unkC & 0x7F;
@@ -83,7 +83,25 @@ loop:
     return 0;
 }
 
-INCLUDE_ASM("asm/nonmatchings/code_12AB30", func_0012AC70);
+f32 func_0012AC70(void *p, s16 *from, s16 *to) {
+    f32 pad[8];
+    f32 v[4];
+    f32 ang;
+
+    v[2] = to[0] - from[0];
+    v[1] = 0.0f;
+    v[0] = to[2] - from[2];
+    func_003202A0(v, v);
+    ang = atan2(v[0], v[2]) + 1.570796f;
+    while (ang > 3.141592026f) {
+        ang -= 6.283184052f;
+    }
+    while (ang < -3.141592026f) {
+        ang += 6.283184052f;
+    }
+    func_00117838(p, ang);
+    return ang;
+}
 
 void func_0012AD98(UnkObj *p) {
     func_0012AC70(p, D_0049B4B4, D_0049B4B8);
@@ -100,8 +118,8 @@ s32 func_0012ADE8(UnkObj *p) {
     return r;
 }
 
-void func_0012AE10(void *p) {
-    func_00117838(p);
+void func_0012AE10(void *p, f32 a) {
+    func_00117838(p, a);
     func_00117160(p, func_0011D748(2));
     func_0011BD10(p, 1);
 }

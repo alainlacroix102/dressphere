@@ -30,7 +30,7 @@ CPP_FLAGS = [
     "-D_R5900", "-D__R5900__", "-D__ee__", "-D_LANGUAGE_C", "-DLANGUAGE_C",
     "-D__mips_single_float", "-D__mips64", "-D__mips_eabi",
 ]
-AS_FLAGS = ["-EL", "-march=r5900", "-mabi=32", "-G0", "-no-pad-sections",
+AS_FLAGS = ["-EL", "-march=r5900", "-mabi=32", "-G8", "-no-pad-sections",
             "-Iinclude", "-I."]
 
 MOVE_RE = re.compile(r"^(\s*)move\s+(\$\w+),\s*(\$\w+)\s*$")
@@ -43,36 +43,77 @@ def cc1_path(name: str) -> Path:
     return found[0]
 
 
+# real (non-macro) instructions safe to place under noreorder
+SIMPLE_RE = re.compile(r"^\s*(cvt\.\w+\.\w+|mov\.s|add\.s|sub\.s|mul\.s|div\.s|neg\.s|abs\.s|"
+                       r"c\.\w+\.s|swc1|lwc1|addu|subu|daddu|sll|srl|sra|and|or|xor|nor|"
+                       r"andi|ori|xori|addiu|lui|sw|lw|sh|lh|sb|lb|sd|ld|move)\s")
+BRANCH_RE = re.compile(r"^\s*(b\w*|j|jal|jr|jalr)\s")
+MTC1_RE = re.compile(r"^\s*(mtc1|mfc1)\s")
+LID_RE = re.compile(r"^(\s*)li\.d\s+(\$\d+),\s*(\S+)\s*$")
 CVTWS_RE = re.compile(r"^(\s*)cvt\.w\.s\s+\$f(\d+),\s*\$f(\d+)\s*$")
 FCMP_RE = re.compile(r"^\s*c\.\w+\.s\s")
 BC1_RE = re.compile(r"^\s*bc1[tf]l?\s")
 
 
+LABEL_RE = re.compile(r"^(\$?\w+):")
+INSN_RE = re.compile(r"^\s+[a-z][\w.]*(\s|$)")
+
+
+def short_loop_pad(out: list[str], branch: str) -> int:
+    """EE short-loop erratum: the 1999 assembler padded a backward branch with
+    nops so that the loop (label .. branch inclusive) is at least 6 insns."""
+    target = branch.split(",")[-1].strip()
+    count = 1  # the compare
+    for prev in reversed(out):
+        m = LABEL_RE.match(prev)
+        if m:
+            if m.group(1) == target:
+                return max(0, 6 - (count + 1))
+            continue
+        if INSN_RE.match(prev) and not prev.strip().startswith("."):
+            count += 1
+            if count > 6:
+                return 0
+    return 0
+
+
 def fix_asm(text: str) -> str:
     """Make modern gas output what the 1999 EE assembler did.
 
+    - Hazards: the old assembler treated the EE as interlocked inside
+      `.set reorder` code: no nop after mtc1/mfc1 or between an FP compare
+      and bc1t/bc1f. We emit those under noreorder so modern gas can't add
+      them. (It still flushed an FP-compare hazard with a nop when gcc itself
+      switched to noreorder right after a compare; modern gas does the same.)
+      Short backward loops were padded to 6 insns (EE short-loop erratum).
     - `move` -> `daddu` (old binutils' 64-bit encoding)
     - `cvt.w.s` -> raw .word (modern gas refuses it for r5900)
-    - In `.set reorder` code, modern gas puts a hazard nop between an FP
-      compare and the following bc1t/bc1f; the EE assembler didn't (only the
-      delay-slot nop). Emit that pair explicitly under noreorder.
+    - `li.d $gpr` -> .rodata constant + ld (modern gas refuses it for r5900)
     """
     lines = text.splitlines()
     out = ["\t.set gp=64"]
     reorder = True
+    last_insn = ""
+    n_dbl = 0
     i = 0
     while i < len(lines):
         line = lines[i]
         stripped = line.strip()
-        if stripped.startswith(".set\tnoreorder") or stripped == ".set noreorder":
+        if stripped in (".set\tnoreorder", ".set noreorder"):
             reorder = False
-        elif stripped.startswith(".set\treorder") or stripped == ".set reorder":
+        elif stripped in (".set\treorder", ".set reorder"):
             reorder = True
         m = MOVE_RE.match(line)
         if m:
             line = f"{m.group(1)}daddu\t{m.group(2)},{m.group(3)},$0"
-        # modern gas rejects cvt.w.s for r5900; the EE assembler emitted the
-        # standard COP1 encoding
+        m = LID_RE.match(line)
+        if m and reorder:
+            lab = f"$LIDC{n_dbl}"
+            n_dbl += 1
+            out += ["\t.pushsection .rodata", "\t.align 3", f"{lab}:",
+                    f"\t.double\t{m.group(3)}", "\t.popsection"]
+            out += ["\t.set noat", f"{m.group(1)}lui\t$1,%hi({lab})"]
+            line = f"{m.group(1)}ld\t{m.group(2)},%lo({lab})($1)\n\t.set at"
         m = CVTWS_RE.match(line)
         if m:
             fd, fs = int(m.group(2)), int(m.group(3))
@@ -82,9 +123,27 @@ def fix_asm(text: str) -> str:
             while j < len(lines) and lines[j].strip().startswith("#"):
                 j += 1
             if j < len(lines) and BC1_RE.match(lines[j]):
-                out += ["\t.set noreorder", line, lines[j], "\tnop", "\t.set reorder"]
+                pad = short_loop_pad(out, lines[j])
+                out += ["\t.set noreorder", line, *["\tnop"] * pad, lines[j],
+                        "\tnop", "\t.set reorder"]
+                last_insn = lines[j]
                 i = j + 1
                 continue
+        # cop1 moves: modern gas adds a hazard nop before the next use; the EE
+        # assembler did not (the EE interlocks)
+        if reorder and MTC1_RE.match(line):
+            j = i + 1
+            while j < len(lines) and lines[j].strip().startswith("#"):
+                j += 1
+            nxt = lines[j] if j < len(lines) else ""
+            if SIMPLE_RE.match(nxt) and not BRANCH_RE.match(nxt):
+                nxt = MOVE_RE.sub(lambda m: f"{m.group(1)}daddu\t{m.group(2)},{m.group(3)},$0", nxt)
+                out += ["\t.set noreorder", line, nxt, "\t.set reorder"]
+                last_insn = nxt
+                i = j + 1
+                continue
+        if INSN_RE.match(line) and not stripped.startswith((".", "#")):
+            last_insn = line
         out.append(line)
         i += 1
     return "\n".join(out) + "\n"
@@ -111,9 +170,12 @@ def compile_c(src: Path, out_o: Path, compiler: str = DEFAULT_CC,
                          input=asm, cwd=ROOT, capture_output=True, text=True)
     if gas.returncode:
         sys.exit(f"{src}: as failed\n{gas.stderr}")
-    # MIPS gas forces .text to 16-byte alignment; the retail objects were 8.
-    subprocess.run(["mips-linux-gnu-objcopy", "--set-section-alignment",
-                    ".text=8", str(out_o)], check=True)
+    # MIPS gas forces 16-byte section alignment; retail objects were packed
+    # tighter (.text 8, .rodata 8, .lit4 4).
+    subprocess.run(["mips-linux-gnu-objcopy",
+                    "--set-section-alignment", ".text=8",
+                    "--set-section-alignment", ".rodata=8",
+                    "--set-section-alignment", ".lit4=4", str(out_o)], check=True)
 
 
 def main() -> None:

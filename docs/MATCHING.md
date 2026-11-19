@@ -48,8 +48,21 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
   can also duplicate the epilogue to tail-call from a branch, which retail sometimes did
   not. Unsolved, see `func_0012B000`.
 
+- **Float constants in double expressions:** `atan2(...) + 1.570796f` stores
+  `(double)1.570796f` (`0x3FF921FB00000000`) in `.rodata`. If a `.double` constant's low word
+  is zero, the source wrote a float literal.
+- **Statement order sets the stack layout:** the order of the stores into a local array
+  decides which values gcc computes first. `func_0012AC70` matched only once `v[2]` was
+  assigned before `v[0]`.
+- **Extra stack space:** a frame larger than the locals need means there's an unused or
+  padded local. Add a dummy array (`f32 pad[8];`) until the offsets agree.
+
 ## Assembler differences (handled in `tools/eecc.py`)
 
 - `move` encodes as `daddu`, not `or`.
 - No hazard `nop` between an FP compare and `bc1t`/`bc1f` in reorder mode.
 - `cvt.w.s` is emitted as a raw `.word`, because modern gas rejects it for r5900.
+- `li.d` into a GPR becomes `.rodata` plus `lui $1`/`ld`.
+- No hazard `nop` after `mtc1`/`mfc1`. FP compare loops shorter than 6 instructions get
+  padding `nop`s.
+- See `docs/COMPILER.md` for the full list.

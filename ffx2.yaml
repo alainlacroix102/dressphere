@@ -86,6 +86,8 @@ segments:
       - [0x390580, vutext, cod/390580] # .vutext
       - [0x396D00, gcc_except_table, cod/396D00] # .gcc_except_table
       - [0x396E00, lit4, cod/396E00] # .lit4
+      - [0x3971BC, .lit4, code_12AB30]
+      - [0x3971CC, lit4, cod/3971CC]
       - [0x397380, sdata, cod/397380] # .sdata
       - { type: sbss, vram: 0x00497480, name: cod/00497480 } # .sbss
       - { type: bss, vram: 0x00497500, name: cod/00497500 } # .bss

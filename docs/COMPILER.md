@@ -17,12 +17,29 @@ standardise on `991111` and will revisit if a function only matches with another
      modern gas emits `or`
    - in `.set reorder` code, emit an FP compare directly followed by `bc1t`/`bc1f` as an
      explicit noreorder `c.cond; bc1x; nop`. Modern gas inserts a compare→branch hazard
-     `nop` for r5900 that the EE assembler did not (`.set mips4` was tried; it also drops
-     `nop`s that retail keeps)
-4. Modern `mips-linux-gnu-as -march=r5900 -mabi=32`. The same assembler handles splat's
+     `nop` for r5900 that the EE assembler did not. When the branch closes a loop shorter
+     than 6 instructions, pad with `nop`s up to 6, as the old assembler did (the EE
+     short-loop erratum)
+   - put `mtc1`/`mfc1` and the next simple instruction under noreorder, so gas adds no
+     hazard `nop` between them
+   - emit `cvt.w.s` as a raw `.word`, because modern gas rejects it for r5900
+   - turn `li.d $gpr,val` (soft-float double constants) into a `.double` in `.rodata` that
+     is loaded with `lui $1,%hi; ld $r,%lo($1)`, as the old assembler expanded it. Modern
+     gas rejects `li.d` into a GPR for r5900
+   - `.set mips4` is **not** used. It changes how `c.lt.s` is encoded and leaks into the
+     `INCLUDE_ASM` code in the same file
+4. Modern `mips-linux-gnu-as -march=r5900 -mabi=32 -G8`. `-G8` sends `li.s` constants to
+   `.lit4`, addressed gp-relative and not deduplicated, which matches retail. The same assembler handles splat's
    `INCLUDE_ASM` output in the same file
-5. `objcopy --set-section-alignment .text=8`. Modern MIPS gas forces 16-byte `.text`
-   alignment, but retail objects are packed at 8
+5. `objcopy --set-section-alignment` `.text=8 .rodata=8 .lit4=4`. Modern MIPS gas forces
+   16-byte section alignment, but retail objects are packed tighter
+
+## Library calls
+
+Under `-msingle-float`, `double` is soft-float. This cc1 calls the helpers by Sony's old
+libgcc names: `fptodp` (float→double), `dptofp`, `dpadd`, `dpsub`, `dpmul`, `dpdiv`,
+`dpcmp`. Name them that way in `symbol_addrs.txt` so C objects link against the retail
+code.
 
 ```bash
 (cd /tmp && apt-get download libc6-i386) && dpkg-deb -x /tmp/libc6-i386_*.deb tools/i386
