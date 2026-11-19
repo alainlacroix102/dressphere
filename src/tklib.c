@@ -9,7 +9,9 @@ typedef struct {
     /* 0x00 */ u16 unk0[6];
     /* 0x0C */ u8 unkC;
     /* 0x0D */ u8 unkD;
-    /* 0x0E */ u8 padE[0x2A - 0xE];
+    /* 0x0E */ u8 padE[0x10 - 0xE];
+    /* 0x10 */ u32 unk10;
+    /* 0x14 */ u8 pad14[0x2A - 0x14];
     /* 0x2A */ u8 unk2A;
     /* 0x2B */ u8 unk2B;
     /* 0x2C */ u8 pad2C[0xB8 - 0x2C];
@@ -100,6 +102,43 @@ extern s32 func_2075F08(void);
 extern void func_0015DD78(void);
 extern void func_00315628(void);
 extern void func_00315150(void);
+extern void func_00153348(void);
+extern void func_0031B848(void);
+extern void func_00314EF8(s32, s32);
+extern void func_00313918(void);
+extern void func_20749C8(void);
+extern void func_00321230(void);
+extern void func_0031AE58(void);
+extern void func_00217870(void);
+extern void func_0015C090(const char *); /* debug marker */
+
+/* File access interface returned by func_00172340. */
+typedef struct {
+    /* 0x00 */ s32 (*read)(s32 idx, void *buf, s32, s32);
+    /* 0x04 */ void *unk4;
+    /* 0x08 */ s32 (*sync)(s32);
+    /* 0x0C */ void *unkC;
+    /* 0x10 */ s32 (*open)(s32 grp);
+    /* 0x14 */ s32 (*size)(s32 idx);
+} TkFileIf;
+
+extern TkFileIf *func_00172340(void);
+extern void *D_00359A90;
+extern void *D_00359A94;
+extern s32 D_0049B7AC;
+extern s32 D_0049B7B0;
+extern s8 D_0048CEA1;
+extern char *func_00340B10(char *, const char *, s32); /* strncpy */
+extern s32 func_00340740(const char *); /* strlen */
+extern s32 func_0033FF08(char *, const char *, ...); /* sprintf */
+extern s32 func_00105830(void);
+extern void func_0016DFD8(s32, s32, const char *, s32, s32);
+extern void func_00315660(void);
+extern void func_00314FD8(void);
+extern void func_00315598(void);
+extern void func_001757A8(char **);
+extern void func_001741A8(s32);
+extern void func_0016B4C0(s32);
 
 TkStatus *func_00130A40(void);
 void func_00130A88(s32 a, s32 b);
@@ -623,4 +662,210 @@ void func_001313F0(void) {
 void func_001313F8(void) {
     func_001313F0();
     func_001313B8();
+}
+
+void func_00131418(void) {
+    func_00153348();
+    func_0031B848();
+    func_00314EF8(-1, 0);
+    func_00313918();
+    if (func_0031C5E8()) {
+        func_20749C8();
+    }
+    func_00321230();
+    if (func_0031C5E8()) {
+        func_0033ED50("TK:Disable Debug Font(S-JIS)\n");
+        func_0031AE58();
+        func_0033ED50("TK:Disable Debug Font(S-JIS) Done.\n");
+    }
+    func_00130FB8(0);
+    func_00217870();
+}
+
+void *func_001314A8(s32 grp, s32 idx) {
+    TkFileIf *f = func_00172340();
+    u8 *buf;
+
+    f->open(grp);
+    buf = (u8 *)func_001308C8(f->size(idx));
+    buf[0] = 0;
+    buf[1] = 0;
+    buf[2] = 0;
+    buf[3] = 0;
+    func_003492E0(0);
+    f->read(idx, buf, 0, 0);
+    f->sync(0);
+    return buf;
+}
+
+void *func_00131548(s32 grp, s32 idx) {
+    TkFileIf *f = func_00172340();
+    s32 size;
+    u8 *buf;
+
+    f->open(grp);
+    size = f->size(idx);
+    func_0015C090("EVENT MALLOC");
+    buf = (u8 *)func_001308C8(size);
+    func_0015C090("EVENT MALLOC DONE");
+    buf[0] = 0;
+    buf[1] = 0;
+    buf[2] = 0;
+    buf[3] = 0;
+    func_003492E0(0);
+    func_0015C090("EVENT READ");
+    f->read(idx, buf, 0, 0);
+    func_0015C090("EVENT READ SYNC");
+    f->sync(0);
+    func_003492E0(0);
+    return buf;
+}
+
+void func_00131628(s32 grp, s32 idx, void *buf) {
+    TkFileIf *f = func_00172340();
+
+    f->open(grp);
+    f->size(idx);
+    func_003492E0(0);
+    f->read(idx, buf, 0, 0);
+    f->sync(0);
+    func_003492E0(0);
+}
+
+void func_001316B8(s32 grp, s32 idx, void *buf) {
+    TkFileIf *f;
+
+    func_0033ED50("TK:\tNonBlockRead:GRP=%d/IDX=%d/ADRS=%p\n", grp, idx, buf);
+    f = func_00172340();
+    f->open(grp);
+    func_003492E0(0);
+    f->read(idx, buf, 0, 0);
+}
+
+void func_00131748(s32 a) {
+    func_00172340()->sync(a);
+}
+
+void *func_00131778(s32 grp, s32 idx, s32 min) {
+    TkFileIf *f = func_00172340();
+    s32 size;
+    u8 *buf;
+
+    f->open(grp);
+    size = f->size(idx);
+    buf = (u8 *)func_001308C8(size < min ? min : size);
+    buf[0] = 0;
+    buf[1] = 0;
+    buf[2] = 0;
+    buf[3] = 0;
+    func_003492E0(0);
+    f->read(idx, buf, 0, 0);
+    f->sync(0);
+    func_003492E0(0);
+    return buf;
+}
+
+s32 func_00131838(s32 grp, s32 idx) {
+    TkFileIf *f = func_00172340();
+
+    f->open(grp);
+    return f->size(idx);
+}
+
+void func_00131890(void) {
+    D_00359A94 = func_001314A8(0x18, 4);
+    func_0033ED50("TK:Read Event Mapinfo\n");
+}
+
+void func_001318C0(void) {
+}
+
+void func_001318C8(s32 v) {
+    func_001306A0()[0xC] = v;
+}
+
+void func_001318F0(void) {
+    D_0049B7AC = 0;
+}
+
+void func_00131900(void) {
+    D_0049B7B0++;
+    if (D_0049B7AC < 0x14C) {
+        D_0049B7AC += 0x14;
+    } else {
+        D_0049B7AC = 0;
+    }
+}
+
+void func_00131938(const char *s) {
+    char name[0x20];
+    char line[0x100];
+    s32 n;
+
+    if (((s8 *)func_001306A0())[0xC]) {
+        func_0031D4C8(0, 0);
+        func_00340B10(name, s, 0x17);
+        for (n = func_00340740(s); n < 0x17; n++) {
+            name[n] = ' ';
+        }
+        name[0x17] = '\0';
+        func_0033FF08(line, "%04d:%s", D_0049B7B0, name);
+        func_0016DFD8(0x30, D_0049B7AC + 0x20, line, func_00105830(), 1);
+        func_00131900();
+    }
+}
+
+void func_00131A20(void) {
+    if (D_00359A90) {
+        func_001309A0((s32)D_00359A90);
+    }
+    D_00359A90 = func_00131778(0x19, 0, 0x8000);
+}
+
+void func_00131A68(void) {
+    TkStatus *p;
+
+    func_001318F0();
+    D_0049B7B0 = 0;
+    func_00315660();
+    func_00314FD8();
+    func_00315598();
+    D_0049B7A4 = 1;
+    D_0049B7A5 = 0;
+    D_00359A90 = 0;
+    func_00130608(0);
+    func_00130880(0);
+    func_00130810(0);
+    p = func_00130A40();
+    p->unk10 = (p->unk10 | 0x2000000) & ~0x4000000;
+}
+
+void func_00131AF8(void) {
+    func_0033ED50("TK:InitSa Callback:%d\n", 0);
+    if (func_00130650()) {
+        char *names[3] = {
+            "\\FFXDEMO\\FFXDEMO.BIN;1",
+            "\\FFXDEMO\\CDROM.MDG;1",
+            "\\FFXDEMO\\CDROM.FID;1",
+        };
+
+        if (!D_0048CEA1) {
+            func_0033ED50("DISCINFO 0:%s\n", names[0]);
+            func_0033ED50("DISCINFO 1:%s\n", names[1]);
+            func_0033ED50("DISCINFO 2:%s\n", names[2]);
+            func_001757A8(names);
+        }
+    }
+    func_001741A8(0);
+    func_0033ED50("TK:sa_cd_callback_init\n");
+    func_0016B4C0(0);
+    func_0033ED50("TK:sa_cd_callback_init done\n");
+    func_0033ED50("TK:InitSa Callback Done\n");
+    func_00130A70(0x17, 0);
+    func_00130A88(0x17, 0);
+    D_00359A94 = 0;
+    if (func_0031C5E8()) {
+        func_0033ED50("TK:InitStartMap\n");
+        func_00130CD8();
+    }
 }

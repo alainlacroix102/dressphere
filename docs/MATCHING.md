@@ -124,6 +124,13 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
 - **`u16` parameters:** an `andi $aN,0xFFFF` on an incoming argument means the callee
   declared it `u16` (`func_001312E0`).
 
+- **Indirect calls are never tail calls:** `f->sync(a);` at the end of a void function
+  stays `jalr` + epilogue (`func_00131748`).
+- **Local arrays declared late:** if the `ldl`/`ldr` copy of an initializer happens after
+  a call, the array was declared inside the `if` block that follows that call
+  (`char *names[3]` in `func_00131AF8`). The initializer's strings come before the
+  table in `.rodata`.
+
 ## Assembler differences (handled in `tools/eecc.py`)
 
 - `move` encodes as `daddu`, not `or`.
