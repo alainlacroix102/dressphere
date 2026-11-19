@@ -11,6 +11,7 @@ typedef signed int s32;
 typedef unsigned int u32;
 typedef signed long s64;      /* EE gcc: long is 64-bit */
 typedef unsigned long u64;
+typedef unsigned int u128 __attribute__((mode(TI))); /* 128-bit GPR (lq/sq) */
 typedef float f32;
 
 #define NULL ((void *)0)

@@ -77,7 +77,8 @@ segments:
       - [0x000000, asm, cod/000000] # .text
       - [0x02AB30, c, code_12AB30]   # provisional TU, boundaries unknown
       - [0x02BCB0, c, id/map_id]
-      - [0x02D060, asm, cod/02D060]
+      - [0x02D060, c, code_12D060]   # provisional TU, end unknown
+      - [0x02E888, asm, cod/02E888]
       - [0x1F2BA0, c, code_2F2BA0]   # provisional TU, boundaries unknown
       - [0x1F2F58, asm, cod/1F2F58]
       - [0x251480, data, cod/251480] # .data

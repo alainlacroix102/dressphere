@@ -63,6 +63,19 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
   `x[min] >= x[j]` and `x[j] <= x[min]` give different code, so try both.
 - **Field update order:** the order of `+=` statements decides the load and store order
   (`Sg_IdInit` matched only once `entries` came before `unk18`).
+- **Inlined helpers:** when one function's body appears inside another, the helper was a
+  `static inline` that both call. A plain `inline` function is emitted at the end of the
+  file, not in place. Pass shared pointers (`List *l`) into the helper so caller and
+  helper use one base register.
+- **Store order is scheduled:** consecutive stores can come out in a different order than
+  the source. Try permutations; `func_0012E7D8` needed `count, head, cur, unk8`.
+- **128-bit copies:** `lq`/`sq` come from `*(u128 *)dst = *(u128 *)src` (`u128` is
+  `mode(TI)` in `common.h`). Strict aliasing lets that load move ahead of an earlier `s32`
+  store, as in retail `func_0012D2B8`. Struct copies with 8-byte alignment use `ld`/`sd`.
+  With 4-byte alignment they use `ldl`/`ldr`. Put `__attribute__((aligned(N)))` between
+  `struct {...}` and the typedef name; after the name it's ignored.
+- **One `if` per condition:** a chain of separate `if (...) return 1;` statements gives a
+  different block layout from one `||` condition.
 - **`ABS()` macro:** `d < 0 ? -d : d` gives retail's duplicated compare branches.
 - **Local `const` tables:** a local `s8 tbl[] = {...}` puts the initializer in the TU's
   `.rodata` (`ldl`/`ldr` + `sdl`/`sdr` copy to the stack). Give the TU a `.rodata`
