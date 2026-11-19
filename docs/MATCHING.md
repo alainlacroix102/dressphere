@@ -49,6 +49,14 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
 - **Rodata finds file boundaries:** `tools/xref.py --rodata` shows where one TU's rodata
   ends and the next one's starts (e.g. `D_0047B1B0` is used first by `func_0012BCB0`). That
   places the next TU's first function.
+- **Asserts:** retail asserts call `func_0012A130(1, "#cond", "src/...c", line, msg, ra)`.
+  The caller's `$ra` is stored through `$t7` (`register void **p asm("$15")` plus an
+  inline `sw $31,0(%0)`). The strings give real file and function names. See the
+  `SG_ASSERT` macro in `src/id/map_id.c`.
+- **No `do { } while (0)` in macros:** its loop notes make gcc emit `.p2align 3` on the
+  label after it. Use a bare `if` or `{ }` block.
+- **`return c ? 8 : 9`** gives `movz` with the constants swapped. `if (c) return 8; return 9;`
+  gives retail's `movn`.
 - **`ABS()` macro:** `d < 0 ? -d : d` gives retail's duplicated compare branches.
 - **Local `const` tables:** a local `s8 tbl[] = {...}` puts the initializer in the TU's
   `.rodata` (`ldl`/`ldr` + `sdl`/`sdr` copy to the stack). Give the TU a `.rodata`
