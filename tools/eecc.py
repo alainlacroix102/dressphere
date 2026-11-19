@@ -43,6 +43,7 @@ def cc1_path(name: str) -> Path:
     return found[0]
 
 
+CVTWS_RE = re.compile(r"^(\s*)cvt\.w\.s\s+\$f(\d+),\s*\$f(\d+)\s*$")
 FCMP_RE = re.compile(r"^\s*c\.\w+\.s\s")
 BC1_RE = re.compile(r"^\s*bc1[tf]l?\s")
 
@@ -51,6 +52,7 @@ def fix_asm(text: str) -> str:
     """Make modern gas output what the 1999 EE assembler did.
 
     - `move` -> `daddu` (old binutils' 64-bit encoding)
+    - `cvt.w.s` -> raw .word (modern gas refuses it for r5900)
     - In `.set reorder` code, modern gas puts a hazard nop between an FP
       compare and the following bc1t/bc1f; the EE assembler didn't (only the
       delay-slot nop). Emit that pair explicitly under noreorder.
@@ -69,6 +71,12 @@ def fix_asm(text: str) -> str:
         m = MOVE_RE.match(line)
         if m:
             line = f"{m.group(1)}daddu\t{m.group(2)},{m.group(3)},$0"
+        # modern gas rejects cvt.w.s for r5900; the EE assembler emitted the
+        # standard COP1 encoding
+        m = CVTWS_RE.match(line)
+        if m:
+            fd, fs = int(m.group(2)), int(m.group(3))
+            line = f"{m.group(1)}.word\t{0x46000024 | (fs << 11) | (fd << 6):#010x}  # cvt.w.s"
         if reorder and FCMP_RE.match(line):
             j = i + 1
             while j < len(lines) and lines[j].strip().startswith("#"):

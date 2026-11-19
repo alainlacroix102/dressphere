@@ -143,7 +143,7 @@ def show_diff(src: Path, compiler: str, flags: str, func: str) -> None:
             elif re.search(r"\$\d+,-?\d+\(\$\d+\)$|lui ", s) and "R" not in s:
                 pass
             if re.match(r"(b\w*|j|jal)\s", s):  # branch/jump targets aren't comparable
-                s = re.sub(r",?[0-9a-fx]+$", "", s)
+                s = re.sub(r",?[0-9a-fx]+$", "", s.strip()).strip()
             return re.sub(r"0x[0-9a-f]+", "X", s)
         bb = b
         if "  [" in a and re.search(r"(lui|addiu|lw|sw|lwc1|swc1|lb|lh|lbu|lhu|sb|sh|ld|sd) ", b):

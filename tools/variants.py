@@ -17,7 +17,10 @@ ROOT = Path(__file__).resolve().parent.parent
 def func_span(text: str, name: str) -> tuple[int, int]:
     m = re.search(rf"^[^\n;]*\b{name}\s*\([^;{{]*\)\s*\{{", text, re.M)
     if not m:
-        sys.exit(f"{name} not defined in C in this TU")
+        a = re.search(rf"^INCLUDE_ASM\([^)]*\b{name}\);", text, re.M)
+        if not a:
+            sys.exit(f"{name} not found (neither C nor INCLUDE_ASM) in this TU")
+        return a.start(), a.end()
     depth, i = 0, m.end() - 1
     while True:
         if text[i] == "{":

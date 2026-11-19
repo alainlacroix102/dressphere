@@ -15,6 +15,8 @@ typedef struct {
     /* 0x19A */ s8 unk19A;
     /* 0x19B */ u8 pad19B[0x1B0 - 0x19B];
     /* 0x1B0 */ s64 unk1B0;
+    /* 0x1B8 */ u8 pad1B8[0x77E - 0x1B8];
+    /* 0x77E */ s16 unk77E;
 } UnkObj;
 
 extern Unk3596B0 *D_003596B0;
@@ -37,10 +39,13 @@ extern void func_00117160(void *, f32);
 extern void func_001176E8(void *, f32);
 extern void func_00117838(void *);
 extern void func_0011BD10(void *, s32);
+extern s32 func_00107508(void *, s32, s32);
+extern s32 func_001079E0(void *, s32, s32, s32, s32, s32);
 extern f32 func_0011D748(s32);
+extern UnkObj *func_0011D300(void);
 f32 func_0012AC70(void *, s32, s32);
 void func_0012AE50(void *);
-void func_0012AE98(void *, f32);
+s32 func_0012AE98(UnkObj *, f32);
 
 s32 func_0012AB30(s32 i) {
     s32 v = D_003596B0[i].unkC & 0x7F;
@@ -51,7 +56,32 @@ s32 func_0012AB30(s32 i) {
     return v;
 }
 
-INCLUDE_ASM("asm/nonmatchings/code_12AB30", func_0012AB78);
+INCLUDE_RODATA("asm/nonmatchings/code_12AB30", D_0047B190);
+
+s32 func_0012AB78(UnkObj *p, s32 i) {
+    u32 type = D_003596B0[i].unkC & 0x7F;
+    s32 ret;
+
+loop:
+    switch (type) {
+        case 1:
+            return 1;
+        case 2:
+            ret = 1;
+            if (p == func_0011D300()) {
+                ret = 0;
+            }
+            return ret;
+        case 14:
+            return p == func_0011D300();
+        case 13:
+            return (s32)(p->unk1B0 >> 2) & 1;
+        case 0x30 ... 0x3F:
+            type = D_0049B460[type - 0x30];
+            goto loop;
+    }
+    return 0;
+}
 
 INCLUDE_ASM("asm/nonmatchings/code_12AB30", func_0012AC70);
 
@@ -81,7 +111,17 @@ void func_0012AE50(void *p) {
     func_0011BD10(p, 4);
 }
 
-INCLUDE_ASM("asm/nonmatchings/code_12AB30", func_0012AE98);
+s32 func_0012AE98(UnkObj *p, f32 unused) {
+    s8 tbl[18] = { 0, 0, 0, 0, 0, 1, 4, 5, 6, 7, 7, 8, 9, 9, 10, 10, 11, 12 };
+    s32 idx = 23.0f - D_0049B4C4;
+    s32 ret;
+
+    func_001176E8(p, func_0012AC70(p, D_0049B4BC, D_0049B4C0));
+    func_0011BD10(p, 3);
+    ret = func_001079E0(p, func_00107508(p, 0, 0x25), 0, 1, tbl[idx], -1);
+    p->unk77E = 1;
+    return ret;
+}
 
 s32 func_0012AF78(UnkObj *p, s32 i) {
     s32 is15 = func_0012AB30(i) == 0xF;
