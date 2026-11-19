@@ -45,13 +45,14 @@ def cc1_path(name: str) -> Path:
 
 
 # real (non-macro) instructions safe to place under noreorder
-SIMPLE_RE = re.compile(r"^\s*(cvt\.\w+\.\w+|mov\.s|add\.s|sub\.s|mul\.s|div\.s|neg\.s|abs\.s|"
+SIMPLE_RE = re.compile(r"^\s*(cvt\.\w+\.\w+|mov\.s|add\.s|sub\.s|mul\.s|neg\.s|abs\.s|"
                        r"c\.\w+\.s|swc1|lwc1|addu|subu|daddu|sll|srl|sra|and|or|xor|nor|"
                        r"andi|ori|xori|addiu|lui|sw|lw|sh|lh|sb|lb|sd|ld|move)\s")
 BRANCH_RE = re.compile(r"^\s*(b\w*|j|jal|jr|jalr)\s")
 MTC1_RE = re.compile(r"^\s*(mtc1|mfc1)\s")
 LID_RE = re.compile(r"^(\s*)li\.d\s+(\$\d+),\s*(\S+)\s*$")
 LIS_RE = re.compile(r"^(\s*)li\.s\s+(\$f\d+),\s*(\S+)\s*$")
+FDIV_RE = re.compile(r"^(\s*)(div|rsqrt)\.s\s")
 SQRTS_RE = re.compile(r"^(\s*)sqrt\.s\s+\$f(\d+),\s*\$f(\d+)\s*$")
 BREAK_RE = re.compile(r"^(\s*)break\s+(\d+)\s*$")
 CVTWS_RE = re.compile(r"^(\s*)cvt\.w\.s\s+\$f(\d+),\s*\$f(\d+)\s*$")
@@ -94,6 +95,7 @@ def fix_asm(text: str, inline_lis: bool = False) -> str:
     - `cvt.w.s` -> raw .word (modern gas refuses it for r5900)
     - `break N` -> `break 0,N` (old gas put a lone code in the low field)
     - `sqrt.s` -> two nops + raw .word in the EE encoding (source in ft)
+    - two nops before `div.s`/`rsqrt.s` in reorder code, as the old assembler did
     - `li.d $gpr` -> .rodata constant + ld (modern gas refuses it for r5900)
     - with `inline_lis` (files assembled -G0): `li.s` -> lui/ori/mtc1 under
       noreorder, so no hazard nops follow the mtc1
@@ -160,6 +162,11 @@ def fix_asm(text: str, inline_lis: bool = False) -> str:
             fd, fs = int(m.group(2)), int(m.group(3))
             out += [f"{m.group(1)}nop", f"{m.group(1)}nop"]
             line = f"{m.group(1)}.word\t{0x46000004 | (fs << 16) | (fd << 6):#010x}  # sqrt.s"
+        m = FDIV_RE.match(line)
+        if m and reorder:
+            # likewise two nops before every div.s/rsqrt.s (7008 of 7096 in
+            # retail; the rest are handwritten or in delay slots)
+            out += [f"{m.group(1)}nop", f"{m.group(1)}nop"]
         m = BREAK_RE.match(line)
         if m:
             line = f"{m.group(1)}break\t0,{m.group(2)}"

@@ -82,7 +82,8 @@ segments:
       - [0x02F8D8, c, code_12F8D8]   # provisional TU (repeats the list clear in code_12D060)
       - [0x02F9D4, asm, cod/02F9D4]  # handwritten VU0 routines
       - [0x0305D0, c, tklib]   # ends at 0x132918 (rodata ends 0x47BFB0); start is a guess
-      - [0x032918, asm, cod/032918]
+      - [0x032918, c, code_132918]   # provisional TU: event script commands
+      - [0x032DA8, asm, cod/032DA8]
       - [0x1F2BA0, c, code_2F2BA0]   # provisional TU, boundaries unknown
       - [0x1F2F58, asm, cod/1F2F58]
       - [0x251480, data, cod/251480] # .data

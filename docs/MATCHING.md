@@ -167,6 +167,15 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
 - **`__DATE__`/`__TIME__`:** spell the retail string out (`"Aug 29 2003  20:13:32"`);
   the host preprocessor would substitute today's date.
 
+- **`sqrtf()` evaluates its argument twice:** the inline expansion re-evaluates the
+  argument for the library fallback. Put a call result in a local first:
+  `f32 v = pop(); return sqrtf(v);` (`func_00132C28`).
+- **Clamps:** `i = i < 0 ? 0 : (i < 0x20 ? i : 0x1F);` gives retail's `bltz` + `movn`
+  into a temp. An `if`/`else if` chain gives `bgez` + `movz` (`func_00132A28`).
+- **Script handlers** (`code_132918.c`): `(ctx, op, args)`. `func_0014A470(ctx, args)` pops
+  an int and `func_0014A538` a float. Handlers that `jal` then return keep the callee's
+  type (`s32` or `f32`).
+
 ## Assembler differences (handled in `tools/eecc.py`)
 
 - `move` encodes as `daddu`, not `or`.

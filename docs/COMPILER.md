@@ -27,6 +27,8 @@ standardise on `991111` and will revisit if a function only matches with another
      single code in the low field (`0x000001CD`); modern gas puts it in the high field
    - emit `sqrt.s fd,fs` as two `nop`s plus a raw `.word` in the EE encoding (source in
      the `ft` field). All 61 `sqrt.s` in retail have the two `nop`s in front
+   - put two `nop`s before every `div.s`/`rsqrt.s` in `.set reorder` code. 7008 of the
+     7096 in retail have them; the rest are handwritten or sit in delay slots
    - turn `li.d $gpr,val` (soft-float double constants) into a `.double` in `.rodata` that
      is loaded with `lui $1,%hi; ld $r,%lo($1)`, as the old assembler expanded it. Modern
      gas rejects `li.d` into a GPR for r5900
