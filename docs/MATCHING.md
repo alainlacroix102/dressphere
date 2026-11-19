@@ -57,6 +57,12 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
   label after it. Use a bare `if` or `{ }` block.
 - **`return c ? 8 : 9`** gives `movz` with the constants swapped. `if (c) return 8; return 9;`
   gives retail's `movn`.
+- **`sqrtf()`** is inlined as `sqrt.s`, a NaN check (`c.eq.s f0,f0`) and a fallback call
+  to the library `sqrtf` (0x32CF10). In splat output, `c1 0x....0004` is EE `sqrt.s`.
+- **FP compare operand order:** `c.le.s $a,$b` follows how the C condition is written.
+  `x[min] >= x[j]` and `x[j] <= x[min]` give different code, so try both.
+- **Field update order:** the order of `+=` statements decides the load and store order
+  (`Sg_IdInit` matched only once `entries` came before `unk18`).
 - **`ABS()` macro:** `d < 0 ? -d : d` gives retail's duplicated compare branches.
 - **Local `const` tables:** a local `s8 tbl[] = {...}` puts the initializer in the TU's
   `.rodata` (`ldl`/`ldr` + `sdl`/`sdr` copy to the stack). Give the TU a `.rodata`

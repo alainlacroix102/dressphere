@@ -47,7 +47,7 @@ extern s32 func_00107508(void *, s32, s32);
 extern s32 func_001079E0(void *, s32, s32, s32, s32, s32);
 extern f32 func_0011D748(s32);
 extern UnkObj *func_0011D300(void);
-extern s32 func_0012CD10(UnkObj *);
+extern s8 func_0012CD10(void);
 f32 func_0012AC70(void *, s16 *, s16 *);
 void func_0012AE50(void *);
 s32 func_0012AE98(UnkObj *, f32);
@@ -302,21 +302,21 @@ s32 func_0012BC00(void) {
 /* RGB555 colour in bits 17-31; grey when func_0012CD10() says it's off. */
 s32 func_0012BC08(UnkObj *p) {
     u32 w = p->unk854;
-    s16 col = func_0012CD10(p) ? w >> 17 : 0x4210;
+    s16 col = func_0012CD10() ? w >> 17 : 0x4210;
 
     return col & 0x1F;
 }
 
 s32 func_0012BC40(UnkObj *p) {
     u32 w = p->unk854;
-    s16 col = func_0012CD10(p) ? w >> 17 : 0x4210;
+    s16 col = func_0012CD10() ? w >> 17 : 0x4210;
 
     return (col >> 5) & 0x1F;
 }
 
 s32 func_0012BC78(UnkObj *p) {
     u32 w = p->unk854;
-    s16 col = func_0012CD10(p) ? w >> 17 : 0x4210;
+    s16 col = func_0012CD10() ? w >> 17 : 0x4210;
 
     return col >> 10;
 }

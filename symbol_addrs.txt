@@ -9,6 +9,8 @@ dptofp = 0x00338E78; // type:func
 fptodp = 0x0033A1C8; // type:func
 // libm
 atan2 = 0x0032C430; // type:func
+sqrtf = 0x0032CF10; // type:func
 // src/id/map_id.c (names from assert strings)
 Sg_IdSetEventID = 0x0012BCB0; // type:func
 Sg_IdGetEventID = 0x0012BD28; // type:func
+Sg_IdInit = 0x0012CD20; // type:func

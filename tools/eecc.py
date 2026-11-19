@@ -52,6 +52,7 @@ BRANCH_RE = re.compile(r"^\s*(b\w*|j|jal|jr|jalr)\s")
 MTC1_RE = re.compile(r"^\s*(mtc1|mfc1)\s")
 LID_RE = re.compile(r"^(\s*)li\.d\s+(\$\d+),\s*(\S+)\s*$")
 LIS_RE = re.compile(r"^(\s*)li\.s\s+(\$f\d+),\s*(\S+)\s*$")
+SQRTS_RE = re.compile(r"^(\s*)sqrt\.s\s+\$f(\d+),\s*\$f(\d+)\s*$")
 CVTWS_RE = re.compile(r"^(\s*)cvt\.w\.s\s+\$f(\d+),\s*\$f(\d+)\s*$")
 FCMP_RE = re.compile(r"^\s*c\.\w+\.s\s")
 BC1_RE = re.compile(r"^\s*bc1[tf]l?\s")
@@ -90,6 +91,7 @@ def fix_asm(text: str, inline_lis: bool = False) -> str:
       Short backward loops were padded to 6 insns (EE short-loop erratum).
     - `move` -> `daddu` (old binutils' 64-bit encoding)
     - `cvt.w.s` -> raw .word (modern gas refuses it for r5900)
+    - `sqrt.s` -> two nops + raw .word in the EE encoding (source in ft)
     - `li.d $gpr` -> .rodata constant + ld (modern gas refuses it for r5900)
     - with `inline_lis` (files assembled -G0): `li.s` -> lui/ori/mtc1 under
       noreorder, so no hazard nops follow the mtc1
@@ -149,6 +151,13 @@ def fix_asm(text: str, inline_lis: bool = False) -> str:
             last_insn = tail[-1] if tail else seq[-1]
             i = j
             continue
+        m = SQRTS_RE.match(line)
+        if m:
+            # EE sqrt.s takes its source in the ft field; the old assembler
+            # also always put two nops in front of it (all 61 in retail).
+            fd, fs = int(m.group(2)), int(m.group(3))
+            out += [f"{m.group(1)}nop", f"{m.group(1)}nop"]
+            line = f"{m.group(1)}.word\t{0x46000004 | (fs << 16) | (fd << 6):#010x}  # sqrt.s"
         m = CVTWS_RE.match(line)
         if m:
             fd, fs = int(m.group(2)), int(m.group(3))
