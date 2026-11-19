@@ -111,6 +111,14 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
 - **Constants via `lui`/`ori` instead of `$gp`:** the file was assembled with `-G0`. Add
   `/* eecc-asflags: -G0 */` to it.
 
+- **Loop exits with `||`:** `if (a || b) break;` shares one branch target. Retail's
+  `beqz` straight to the epilogue (`ld $ra` in the delay slot) came from two separate
+  `if (a) break; if (b) break;` statements (`func_00130AE0`).
+- **Error path placed last:** if retail tests `bltzl` and the error call sits at the end of
+  the function, write the success path first: `if (fd >= 0) { ... } else { error(); }`.
+  An early `if (fd < 0) { error(); return; }` puts the error block first
+  (`func_00130CD8`).
+
 ## Assembler differences (handled in `tools/eecc.py`)
 
 - `move` encodes as `daddu`, not `or`.
