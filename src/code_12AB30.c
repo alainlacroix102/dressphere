@@ -17,6 +17,8 @@ typedef struct {
     /* 0x1B0 */ s64 unk1B0;
     /* 0x1B8 */ u8 pad1B8[0x77E - 0x1B8];
     /* 0x77E */ s16 unk77E;
+    /* 0x780 */ u8 pad780[0x854 - 0x780];
+    /* 0x854 */ s32 unk854; /* bits 0-6 type, 17-31 RGB555 colour */
 } UnkObj;
 
 extern Unk3596B0 *D_003596B0;
@@ -45,6 +47,7 @@ extern s32 func_00107508(void *, s32, s32);
 extern s32 func_001079E0(void *, s32, s32, s32, s32, s32);
 extern f32 func_0011D748(s32);
 extern UnkObj *func_0011D300(void);
+extern s32 func_0012CD10(UnkObj *);
 f32 func_0012AC70(void *, s16 *, s16 *);
 void func_0012AE50(void *);
 s32 func_0012AE98(UnkObj *, f32);
@@ -259,4 +262,61 @@ void func_0012B1B8(UnkObj *p) {
             }
             break;
     }
+}
+
+INCLUDE_ASM("asm/nonmatchings/code_12AB30", func_0012B2D0);
+
+INCLUDE_ASM("asm/nonmatchings/code_12AB30", func_0012B9D0);
+
+s32 func_0012BB78(UnkObj *p) {
+    return p->unk854 & 0x7F;
+}
+
+s32 func_0012BB88(UnkObj *p) {
+    s32 v = p->unk854 & 0x7F;
+
+    if ((u32)(v - 0x30) < 0x10) {
+        return D_0049B460[v - 0x30];
+    }
+    return v;
+}
+
+s32 func_0012BBC0(UnkObj *p) {
+    return (p->unk854 >> 15) & 3;
+}
+
+s32 func_0012BBD0(UnkObj *p) {
+    return (p->unk854 >> 11) & 3;
+}
+
+s32 func_0012BBE0(UnkObj *p) {
+    s32 v = p->unk854 >> 7;
+
+    return (v & 3) | ((v & 0xC3) >> 4);
+}
+
+s32 func_0012BC00(void) {
+    return 0;
+}
+
+/* RGB555 colour in bits 17-31; grey when func_0012CD10() says it's off. */
+s32 func_0012BC08(UnkObj *p) {
+    u32 w = p->unk854;
+    s16 col = func_0012CD10(p) ? w >> 17 : 0x4210;
+
+    return col & 0x1F;
+}
+
+s32 func_0012BC40(UnkObj *p) {
+    u32 w = p->unk854;
+    s16 col = func_0012CD10(p) ? w >> 17 : 0x4210;
+
+    return (col >> 5) & 0x1F;
+}
+
+s32 func_0012BC78(UnkObj *p) {
+    u32 w = p->unk854;
+    s16 col = func_0012CD10(p) ? w >> 17 : 0x4210;
+
+    return col >> 10;
 }

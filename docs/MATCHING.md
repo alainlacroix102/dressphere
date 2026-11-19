@@ -42,6 +42,13 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
   on an `s64` field.
 - **Byte-sized booleans:** `nor; andi 1` computed in place in a saved register comes from
   storing `~a & 1` into a `u8` local. An `s32` local gets a different register.
+- **`movz` vs branch after a call:** `c = f() ? w >> 17 : K` with an `s32`/`u32` `c` gives
+  `movz`. Retail's `bnez` (shift in the delay slot, then `li K`) needs a 16-bit `c`
+  (`s16 col`). The narrowing stops if-conversion. A signed `s16` also gives the `sra` that
+  later shifts need.
+- **Rodata finds file boundaries:** `tools/xref.py --rodata` shows where one TU's rodata
+  ends and the next one's starts (e.g. `D_0047B1B0` is used first by `func_0012BCB0`). That
+  places the next TU's first function.
 - **`ABS()` macro:** `d < 0 ? -d : d` gives retail's duplicated compare branches.
 - **Local `const` tables:** a local `s8 tbl[] = {...}` puts the initializer in the TU's
   `.rodata` (`ldl`/`ldr` + `sdl`/`sdr` copy to the stack). Give the TU a `.rodata`
