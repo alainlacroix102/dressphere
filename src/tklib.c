@@ -71,9 +71,39 @@ extern char D_00359A70[];
 extern s32 D_0049B780;
 extern s32 D_0049B784;
 extern s32 D_0049B78C;
+extern s32 func_0031C5E8(void);
+extern void func_206A088(void);
+extern void func_00217838(void);
+extern void func_0015E588(void);
+extern void func_001B4D10(s32);
+extern void func_00217FE8(void);
+extern void func_0015DEA0(s32);
+extern s32 func_001D08B0(void);
+extern void func_0015DD50(void);
+extern void func_0015DC90(void);
+extern void func_001480D8(s32);
+extern s32 func_00315218(void);
+extern void func_206B6D0(void);
+extern void func_003151F8(void);
+extern void func_00317C00(void);
+extern void func_003492E0(s32); /* FlushCache */
+extern u32 *func_0031E5F0(s32);
+extern void func_0031E940(u32 *, s32);
+extern void func_0015DE50(void);
+extern s32 func_2077300(s32, s32, s32);
+extern void func_0015DD58(void);
+extern s32 func_0031D4C8(s32, u16);
+extern void func_2077590(s32);
+extern void func_2073EB8(s32);
+extern void func_2077698(void);
+extern s32 func_2075F08(void);
+extern void func_0015DD78(void);
+extern void func_00315628(void);
+extern void func_00315150(void);
 
 TkStatus *func_00130A40(void);
 void func_00130A88(s32 a, s32 b);
+s32 func_001312E0(s32 a, u16 b);
 
 void func_001305D0(void) {
     D_0049B7A8 = (u8)func_0031C688();
@@ -448,4 +478,149 @@ void func_00130F88(void) {
 
 void func_00130FB8(s32 a) {
     func_00348EF0(func_00348F50(a), a);
+}
+
+void func_00130FE8(void) {
+    func_0033ED50("TK:Remove Scene\n");
+    if (D_0049B78C) {
+        if (func_0031C5E8() && D_0049B7A5) {
+            func_0033ED50("TK:Output Encount\n");
+            func_206A088();
+        }
+        func_0033ED50("TK:Remove Message Window\n");
+        func_00217838();
+        func_0033ED50("TK:Remove Message Window Done\n");
+        func_0015E588();
+        D_0049B78C = 0;
+    } else {
+        func_0033ED50("TK:No Event Initialize\n");
+    }
+    func_0033ED50("TK:Remove Scene Done\n");
+}
+
+u32 func_00131090(u32 a, u32 b) {
+    return (a + b - 1) / b * b;
+}
+
+void func_001310B0(s32 scene) {
+    func_001B4D10(scene);
+    func_00217FE8();
+    func_00217838();
+    func_0033ED50("TK:Init Scene:%d\n", scene);
+    func_00130FE8();
+    func_0033ED50("TK:EventSetUp\n");
+    func_0015DEA0(scene);
+    D_0049B784 = 0;
+    D_0049B78C = 1;
+    D_0049B788 = 0;
+    D_0049B7A0 = func_001D08B0();
+}
+
+void func_00131138(void) {
+    func_0015DD50();
+    D_0049B780 = 1;
+}
+
+s32 func_00131160(void) {
+    return 0;
+}
+
+void func_00131168(void) {
+    if (D_0049B784) {
+        if (D_0049B788 <= 0) {
+            func_001310B0(func_00130A40()->unk0[0]);
+        } else {
+            D_0049B788--;
+        }
+    }
+    func_0015DC90();
+    D_0049B780 = 0;
+    func_00131138();
+    func_001480D8(1);
+    if (func_0031C5E8() && func_00315218()) {
+        func_206B6D0();
+        func_003151F8();
+    }
+    func_00317C00();
+}
+
+void func_00131200(void) {
+    func_001312E0(0, 0);
+}
+
+void func_00131210(s32 a) {
+    u32 *p;
+
+    func_00131200();
+    func_003492E0(0);
+    __asm__ volatile("sync.l\n\tsync.p");
+    p = func_0031E5F0(1);
+    *p |= 0x40;
+    func_0031E940(p, a);
+}
+
+void func_00131260(void) {
+    s32 r;
+
+    func_0015DE50();
+    r = func_2077300(0, 0, 0);
+    if (func_00130820()) {
+        func_00131210(r);
+        func_001312E0(0, 0);
+    }
+    func_00130810(0);
+}
+
+void func_001312C0(void) {
+    func_0015DD58();
+    func_00317C00();
+}
+
+s32 func_001312E0(s32 a, u16 b) {
+    return func_0031D4C8(a, b);
+}
+
+void func_00131300(void) {
+    if (func_0031C5E8()) {
+        if (func_00315218()) {
+            func_206B6D0();
+            func_003151F8();
+        }
+        func_2077590(0);
+        func_2073EB8(0);
+        func_2077590(1);
+        func_2073EB8(1);
+        func_2077698();
+        if (func_00130820()) {
+            func_00131210(func_2075F08());
+            func_001312E0(0, 0);
+        }
+        func_00131260();
+    }
+}
+
+void func_001313A0(void) {
+    func_0015DD78();
+}
+
+void func_001313A8(void) {
+}
+
+void func_001313B0(void) {
+}
+
+void func_001313B8(void) {
+    func_00315628();
+    func_00315150();
+    func_00130F88();
+    D_0049B780 = 1;
+}
+
+void func_001313F0(void) {
+    func_00315150();
+}
+
+void func_001313F8(void) {
+    func_001313F0();
+    func_001313B8();
 }

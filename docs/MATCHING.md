@@ -119,6 +119,11 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
   An early `if (fd < 0) { error(); return; }` puts the error block first
   (`func_00130CD8`).
 
+- **`sync` after `FlushCache`:** retail's `sync; sync.p` pair is inline asm,
+  `__asm__ volatile("sync.l\n\tsync.p");` (`func_00131210`).
+- **`u16` parameters:** an `andi $aN,0xFFFF` on an incoming argument means the callee
+  declared it `u16` (`func_001312E0`).
+
 ## Assembler differences (handled in `tools/eecc.py`)
 
 - `move` encodes as `daddu`, not `or`.

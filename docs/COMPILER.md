@@ -23,6 +23,8 @@ standardise on `991111` and will revisit if a function only matches with another
    - put `mtc1`/`mfc1` and the next simple instruction under noreorder, so gas adds no
      hazard `nop` between them
    - emit `cvt.w.s` as a raw `.word`, because modern gas rejects it for r5900
+   - rewrite gcc's divide-by-zero trap `break 7` as `break 0,7`. The old assembler put a
+     single code in the low field (`0x000001CD`); modern gas puts it in the high field
    - emit `sqrt.s fd,fs` as two `nop`s plus a raw `.word` in the EE encoding (source in
      the `ft` field). All 61 `sqrt.s` in retail have the two `nop`s in front
    - turn `li.d $gpr,val` (soft-float double constants) into a `.double` in `.rodata` that
