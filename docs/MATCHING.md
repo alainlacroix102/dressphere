@@ -59,6 +59,14 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
 - **Extra stack space:** a frame larger than the locals need means there's an unused or
   padded local. Add a dummy array (`f32 pad[8];`) until the offsets agree.
 
+- **64-bit arguments:** if a constant argument is built with `lui`/`ori` before the other
+  arguments and not in the delay slot, the parameter may be `u64`. GS register writes
+  (`func_002EBCC0(0x47, ...)`) take a `u64`.
+- **Arrays at an offset:** if retail steps a pointer that starts at `a + 10` but ours indexes
+  from `a`, the data is a struct with an array member at that offset. Use the struct.
+- **Constants via `lui`/`ori` instead of `$gp`:** the file was assembled with `-G0`. Add
+  `/* eecc-asflags: -G0 */` to it.
+
 ## Assembler differences (handled in `tools/eecc.py`)
 
 - `move` encodes as `daddu`, not `or`.

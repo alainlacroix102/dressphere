@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import struct
 import subprocess
 import sys
 from pathlib import Path
@@ -50,6 +51,7 @@ SIMPLE_RE = re.compile(r"^\s*(cvt\.\w+\.\w+|mov\.s|add\.s|sub\.s|mul\.s|div\.s|n
 BRANCH_RE = re.compile(r"^\s*(b\w*|j|jal|jr|jalr)\s")
 MTC1_RE = re.compile(r"^\s*(mtc1|mfc1)\s")
 LID_RE = re.compile(r"^(\s*)li\.d\s+(\$\d+),\s*(\S+)\s*$")
+LIS_RE = re.compile(r"^(\s*)li\.s\s+(\$f\d+),\s*(\S+)\s*$")
 CVTWS_RE = re.compile(r"^(\s*)cvt\.w\.s\s+\$f(\d+),\s*\$f(\d+)\s*$")
 FCMP_RE = re.compile(r"^\s*c\.\w+\.s\s")
 BC1_RE = re.compile(r"^\s*bc1[tf]l?\s")
@@ -77,7 +79,7 @@ def short_loop_pad(out: list[str], branch: str) -> int:
     return 0
 
 
-def fix_asm(text: str) -> str:
+def fix_asm(text: str, inline_lis: bool = False) -> str:
     """Make modern gas output what the 1999 EE assembler did.
 
     - Hazards: the old assembler treated the EE as interlocked inside
@@ -89,6 +91,8 @@ def fix_asm(text: str) -> str:
     - `move` -> `daddu` (old binutils' 64-bit encoding)
     - `cvt.w.s` -> raw .word (modern gas refuses it for r5900)
     - `li.d $gpr` -> .rodata constant + ld (modern gas refuses it for r5900)
+    - with `inline_lis` (files assembled -G0): `li.s` -> lui/ori/mtc1 under
+      noreorder, so no hazard nops follow the mtc1
     """
     lines = text.splitlines()
     out = ["\t.set gp=64"]
@@ -114,6 +118,37 @@ def fix_asm(text: str) -> str:
                     f"\t.double\t{m.group(3)}", "\t.popsection"]
             out += ["\t.set noat", f"{m.group(1)}lui\t$1,%hi({lab})"]
             line = f"{m.group(1)}ld\t{m.group(2)},%lo({lab})($1)\n\t.set at"
+        m = LIS_RE.match(line)
+        if m and reorder and inline_lis:
+            bits = struct.unpack("<I", struct.pack("<f", float(m.group(3))))[0]
+            ind, freg = m.group(1), m.group(2)
+            if bits == 0:
+                seq = [f"{ind}mtc1\t$0,{freg}"]
+            else:
+                seq = [f"{ind}lui\t$1,{bits >> 16:#x}"]
+                if bits & 0xFFFF:
+                    seq.append(f"{ind}ori\t$1,$1,{bits & 0xFFFF:#x}")
+                seq.append(f"{ind}mtc1\t$1,{freg}")
+            # Keep the next instruction (and any labels before it) in the
+            # noreorder block too, or gas pads the mtc1 hazard with nops.
+            j = i + 1
+            tail = []
+            while j < len(lines) and (LABEL_RE.match(lines[j]) or not lines[j].strip()
+                                      or lines[j].strip().startswith(("#", ".p2align"))):
+                tail.append(lines[j])
+                j += 1
+            if j < len(lines) and SIMPLE_RE.match(lines[j]):
+                nxt = MOVE_RE.sub(lambda mm: f"{mm.group(1)}daddu\t{mm.group(2)},{mm.group(3)},$0",
+                                  lines[j])
+                tail.append(nxt)
+                j += 1
+            else:
+                tail, j = [], i + 1
+            out += ["\t.set noreorder", "\t.set noat", *seq, "\t.set at", *tail,
+                    "\t.set reorder"]
+            last_insn = tail[-1] if tail else seq[-1]
+            i = j
+            continue
         m = CVTWS_RE.match(line)
         if m:
             fd, fs = int(m.group(2)), int(m.group(3))
@@ -162,11 +197,15 @@ def compile_c(src: Path, out_o: Path, compiler: str = DEFAULT_CC,
         input=pre.stdout, cwd=ROOT, capture_output=True, text=True)
     if cc.returncode:
         sys.exit(f"{src}: cc1 failed\n{cc.stderr}")
-    asm = fix_asm(cc.stdout)
+    # Per-file assembler flags, e.g. `/* eecc-asflags: -G0 */` for modules
+    # whose float constants are built with lui/ori instead of loaded from .lit4.
+    extra = re.findall(r"/\*\s*eecc-asflags:\s*(.*?)\s*\*/", src.read_text())
+    as_flags = AS_FLAGS + [f for e in extra for f in e.split()]
+    asm = fix_asm(cc.stdout, inline_lis="-G0" in as_flags)
     if keep_asm:
         keep_asm.write_text(asm)
     out_o.parent.mkdir(parents=True, exist_ok=True)
-    gas = subprocess.run(["mips-linux-gnu-as", *AS_FLAGS, "-o", str(out_o)],
+    gas = subprocess.run(["mips-linux-gnu-as", *as_flags, "-o", str(out_o)],
                          input=asm, cwd=ROOT, capture_output=True, text=True)
     if gas.returncode:
         sys.exit(f"{src}: as failed\n{gas.stderr}")

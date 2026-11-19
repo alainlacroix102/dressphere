@@ -31,6 +31,10 @@ standardise on `991111` and will revisit if a function only matches with another
 4. Modern `mips-linux-gnu-as -march=r5900 -mabi=32 -G8`. `-G8` sends `li.s` constants to
    `.lit4`, addressed gp-relative and not deduplicated, which matches retail. The same assembler handles splat's
    `INCLUDE_ASM` output in the same file
+   Some modules were assembled with `-G0` instead. Their float constants are built inline
+   with `lui`/`ori`/`mtc1`, not loaded from `.lit4`. Mark such a file with
+   `/* eecc-asflags: -G0 */`. eecc then also expands `li.s` itself under noreorder, so gas
+   adds no hazard `nop`s after the `mtc1`.
 5. `objcopy --set-section-alignment` `.text=8 .rodata=8 .lit4=4`. Modern MIPS gas forces
    16-byte section alignment, but retail objects are packed tighter
 
