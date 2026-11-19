@@ -6,21 +6,49 @@
  * far: 0x1305D0-0x130FE8. */
 
 typedef struct {
-    /* 0x00 */ u16 unk0[6];
-    /* 0x0C */ u8 unkC;
-    /* 0x0D */ u8 unkD;
-    /* 0x0E */ u8 padE[0x10 - 0xE];
-    /* 0x10 */ u32 unk10;
-    /* 0x14 */ u8 pad14[0x2A - 0x14];
-    /* 0x2A */ u8 unk2A;
-    /* 0x2B */ u8 unk2B;
-    /* 0x2C */ u8 pad2C[0xB8 - 0x2C];
-    /* 0xB8 */ u16 unkB8;
-    /* 0xBA */ u16 unkBA;
-    /* 0xBC */ u8 padBC[0xC0 - 0xBC];
-    /* 0xC0 */ u16 unkC0[6];
-    /* 0xCC */ u16 unkCC;
-    /* 0xCE */ u16 unkCE;
+    /* 0x000 */ u16 unk0[6];
+    /* 0x00C */ u8 unkC;
+    /* 0x00D */ u8 unkD;
+    /* 0x00E */ u16 unkE;
+    /* 0x010 */ u32 unk10;
+    /* 0x014 */ s32 unk14;
+    /* 0x018 */ s32 unk18;
+    /* 0x01C */ s32 unk1C;
+    /* 0x020 */ u8 unk20;
+    /* 0x021 */ u8 unk21;
+    /* 0x022 */ u8 unk22;
+    /* 0x023 */ u8 unk23;
+    /* 0x024 */ s32 unk24;
+    /* 0x028 */ u8 unk28;
+    /* 0x029 */ u8 unk29;
+    /* 0x02A */ u8 unk2A;
+    /* 0x02B */ u8 unk2B;
+    /* 0x02C */ s32 unk2C[8];
+    /* 0x04C */ s32 unk4C[20];
+    /* 0x09C */ u8 pad9C[0xAC - 0x9C];
+    /* 0x0AC */ u8 unkAC[8];
+    /* 0x0B4 */ u16 unkB4;
+    /* 0x0B6 */ u16 unkB6;
+    /* 0x0B8 */ u16 unkB8;
+    /* 0x0BA */ u16 unkBA;
+    /* 0x0BC */ u8 padBC[0xC0 - 0xBC];
+    /* 0x0C0 */ u16 unkC0[6];
+    /* 0x0CC */ u16 unkCC;
+    /* 0x0CE */ u16 unkCE;
+    /* 0x0D0 */ u8 unkD0;
+    /* 0x0D1 */ u8 padD1;
+    /* 0x0D2 */ u8 unkD2;
+    /* 0x0D3 */ u8 unkD3;
+    /* 0x0D4 */ u16 unkD4;
+    /* 0x0D6 */ u8 unkD6;
+    /* 0x0D7 */ u8 unkD7;
+    /* 0x0D8 */ u8 padD8[0xE4 - 0xD8];
+    /* 0x0E4 */ s32 unkE4;
+    /* 0x0E8 */ u16 unkE8;
+    /* 0x0EA */ u16 unkEA;
+    /* 0x0EC */ u8 unkEC;
+    /* 0x0ED */ u8 padED[0x10C - 0xED];
+    /* 0x10C */ s32 unk10C[56];
 } TkStatus;
 
 extern u8 D_0049B7A8;
@@ -152,6 +180,11 @@ extern char *func_00176868(s32);
 extern void func_00253C68(char *);
 extern void func_00253C98(char *);
 extern s8 D_00473A58;
+extern u16 D_00359A98[];
+extern void func_001536B0(void);
+extern void func_001589C8(void);
+extern s32 func_00145618(void);
+extern void func_001CF738(s32);
 
 TkStatus *func_00130A40(void);
 void func_00130A88(s32 a, s32 b);
@@ -1051,4 +1084,96 @@ void func_001321C0(void) {
 
 void func_001321C8(void) {
     func_001321C0();
+}
+
+void func_001321D0(void) {
+    TkStatus *p;
+    s32 i;
+
+    func_0033ED50("TK:SAVE WORK INIT\n");
+    p = func_00130A40();
+    p->unk0[0] = 0;
+    p->unkC = 0;
+    p->unk0[2] = 0xFFFF;
+    p->unk0[1] = 0;
+    p->unkD = 0;
+    p->unk0[3] = 0xFFFF;
+    p->unkE = 0;
+    p->unk10 = ((p->unk10 & 0x7FFFFFF) | 0x2000000) & ~0x4000000;
+    p->unk14 = 0;
+    p->unk18 = 0;
+    p->unk1C = 0;
+    p->unkD2 = 0;
+    p->unkD3 = 0;
+    p->unkD4 = 0;
+    p->unkD6 = 0;
+    p->unkD7 = 0;
+    for (i = 55; i >= 0; i--) {
+        p->unk10C[i] = 0;
+    }
+    for (i = 7; i >= 0; i--) {
+        p->unk2C[i] = 0;
+    }
+    for (i = 19; i >= 0; i--) {
+        p->unk4C[i] = 0;
+    }
+    for (i = 0; i < 8; i++) {
+        p->unkAC[i] = i;
+    }
+    p->unkD0 = 2;
+    p->unkEC = 0;
+    p->unk2A = 0;
+    p->unkB8 = 0;
+    p->unkBA = 0;
+    p->unkB4 = 0;
+    p->unkB6 = 0;
+    p->unk20 = 0;
+    p->unk21 = 0xFF;
+    p->unk22 = 0xFF;
+    p->unk24 = 0;
+    p->unk28 = 0;
+    p->unk29 = 0;
+    p->unk2B = 0;
+    p->unkE4 = 0;
+    p->unkE8 = 0;
+    p->unkEA = 0;
+    p->unk23 = 0xFF;
+    func_001536B0();
+    func_001589C8();
+    if (func_00145618()) {
+        func_0033ED50("Tk:Asia(change to English)\n");
+        func_001CF738(1);
+    }
+}
+
+u16 func_00132398(s32 x) {
+    return D_00359A98[x / 64];
+}
+
+u16 func_001323C8(s32 x) {
+    return D_00359A98[(0x1000 - x) / 64];
+}
+
+void func_00132400(void) {
+    u16 *p = D_00359A98;
+    s32 v = 0x1000;
+    s32 i;
+    s32 d = 10;
+
+    p += 64;
+    *p = v;
+    for (i = 0; i < 64; i++) {
+        *--p = v;
+        v = v * 9 / d;
+    }
+    p[-1] = 0;
+}
+
+void func_00132458(void) {
+    func_0033ED50("TK:Load Vibrate\n");
+    func_00131628(0x18, 8, D_004AB800);
+}
+
+void func_00132488(void) {
+    func_00132458();
 }

@@ -11,6 +11,7 @@ you find more.
 .venv/bin/python tools/matchcheck.py src/tu.c -d func_XXXXXXXX   # side-by-side
 .venv/bin/python tools/variants.py src/tu.c func_XXXXXXXX variants.c  # try many bodies
 .venv/bin/python tools/permute.py src/tu.c func_XXXXXXXX FIRST LAST   # reorder lines FIRST..LAST
+.venv/bin/python tools/permute.py --climb src/tu.c func_XXXXXXXX FIRST LAST  # >7 lines: hill-climb
 .venv/bin/python tools/xref.py --rodata 0x47B100 0x47B300   # rodata users (TU order)
 ninja                                                 # whole image must still match
 ```
@@ -140,6 +141,19 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
 - **Empty string defaults:** an 8-byte zero entry in `.rodata` just before a function's
   strings is a `""` literal (`char *name = "";` in `func_001320F8`). gcc reuses one copy for
   every `""` in the function.
+
+- **Counting loops are reversed:** gcc turns `for (i = 0; i < N; i++)` into a count-down
+  `li N-1 ... addiu -1; bgez` loop when `i` is not needed in order. If retail counts down
+  but steps a pointer, try the up-counting `for` first (`func_00132400`, the `unkAC` loop
+  in `func_001321D0`). A down-counting source loop over an array also counts down but
+  indexes with `addu` instead of stepping a pointer.
+- **Divisor in a register:** `beql $aN,$aM` (with `$aM` = 0) before `break 7` means the
+  divisor was a variable, not a constant (`s32 d = 10;` in `func_00132400`).
+- **Short loops:** gas pads integer loops shorter than 6 instructions with `nop`s for the
+  r5900 erratum just like the old assembler did, so `INCLUDE_ASM`-style padding needs no
+  special handling.
+- **Long store sequences:** `tools/permute.py --climb` finds the source order of 10–20
+  independent stores. `func_001321D0` only needed one store moved to the end.
 
 ## Assembler differences (handled in `tools/eecc.py`)
 
