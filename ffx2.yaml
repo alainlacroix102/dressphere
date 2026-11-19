@@ -1,0 +1,86 @@
+name: Final Fantasy X-2 (USA) SLUS-20672
+sha1: 183475f01ab99b5760dd7160614f4da6ec2ff87f
+options:
+  basename: SLUS_206.72
+  target_path: iso/SLUS_206.72.rom
+  elf_path: build/SLUS_206.72.elf
+  base_path: .
+  platform: ps2
+  compiler: EEGCC
+
+  gp_value: 0x0049EDF0
+  ld_gp_expression: cod_LIT4_START + 0x7FF0
+
+  asm_path: asm
+  src_path: src
+  build_path: build
+
+  ld_script_path: SLUS_206.72.ld
+  ld_dependencies: True
+  ld_wildcard_sections: True
+  ld_bss_contains_common: True
+  ld_align_section_vram_end: False
+  ld_align_segment_vram_end: False
+
+  create_asm_dependencies: True
+
+  find_file_boundaries: False
+
+  o_as_suffix: True
+
+  symbol_addrs_path:
+    - symbol_addrs.txt
+  reloc_addrs_path:
+    - reloc_addrs.txt
+
+  undefined_funcs_auto_path: undefined_funcs_auto.txt
+  undefined_syms_auto_path: undefined_syms_auto.txt
+
+  extensions_path: tools/splat_ext
+
+  string_encoding: ASCII
+  data_string_encoding: ASCII
+  rodata_string_guesser_level: 2
+  data_string_guesser_level: 2
+
+  named_regs_for_c_funcs: False
+  add_set_gp_64: True
+
+  section_order:
+    - .text
+    - .data
+    - .rodata
+    - .vutext
+    - .gcc_except_table
+    - .lit4
+    - .sdata
+    - .sbss
+    - .bss
+
+  auto_link_sections:
+    - .data
+    - .rodata
+    - .gcc_except_table
+    - .lit4
+    - .sdata
+    - .sbss
+    - .bss
+
+segments:
+  - name: cod
+    type: code
+    start: 0x000000
+    vram: 0x00100000
+    bss_size: 0x127DDC
+    subalign: null
+    subsegments:
+      - [0x000000, asm, cod/000000] # .text
+      - [0x251480, data, cod/251480] # .data
+      - [0x378580, rodata, cod/378580] # .rodata
+      - [0x390580, vutext, cod/390580] # .vutext
+      - [0x396D00, gcc_except_table, cod/396D00] # .gcc_except_table
+      - [0x396E00, lit4, cod/396E00] # .lit4
+      - [0x397380, sdata, cod/397380] # .sdata
+      - { type: sbss, vram: 0x00497480, name: cod/00497480 } # .sbss
+      - { type: bss, vram: 0x00497500, name: cod/00497500 } # .bss
+  - [0x39744C]
