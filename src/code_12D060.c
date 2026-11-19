@@ -1,4 +1,5 @@
 #include "common.h"
+#include "list.h"
 
 /* Provisional translation unit: starts at 0x12D060 (the rodata after
  * map_id.c's begins here with the /ffx2/proj/map/... loader paths); the
@@ -7,17 +8,6 @@
 typedef struct {
     s32 x, y, z, w;
 } __attribute__((aligned(16))) IVec4;
-
-typedef struct ListNode {
-    struct ListNode *next;
-} ListNode;
-
-typedef struct {
-    /* 0x0 */ ListNode *head;
-    /* 0x4 */ ListNode *cur;
-    /* 0x8 */ s32 unk8;
-    /* 0xC */ s32 count;
-} List;
 
 typedef struct {
     /* 0x000 */ u8 pad0[0x10];
@@ -38,13 +28,11 @@ typedef struct {
 extern s8 D_0049B728;
 extern s32 D_003596DC;
 extern s32 D_00359708;
-extern List D_00359710;
 extern char D_0047B3E8[]; /* "result=%d\n" */
 
 extern void func_00320CD8(IVec4 *out, void *v, void *m, s32);
 extern s32 func_0012DD58(f32 *, f32 *, f32 *, f32 *, s32);
 extern s32 func_0033ED50(const char *, ...); /* printf */
-extern void func_0033B2E8(void *); /* free */
 
 void func_0012D060(s8 v) {
     D_0049B728 = v;
@@ -137,31 +125,6 @@ INCLUDE_ASM("asm/nonmatchings/code_12D060", func_0012E468);
 
 INCLUDE_ASM("asm/nonmatchings/code_12D060", func_0012E500);
 
-static inline void ListRemove(List *l, ListNode *n) {
-    ListNode *it;
-    ListNode *prev;
-
-    if (l->head != NULL) {
-        prev = NULL;
-        it = l->head;
-        do {
-            if (it == n) {
-                if (prev != NULL) {
-                    prev->next = n->next;
-                } else {
-                    l->head = n->next;
-                }
-                l->count--;
-                break;
-            }
-            prev = it;
-            it = it->next;
-        } while (it != NULL);
-    }
-    func_0033B2E8(n);
-    l->cur = l->head;
-}
-
 void func_0012E6E0(ListNode *n) {
     ListRemove(&D_00359710, n);
 }
@@ -198,26 +161,6 @@ void func_0012E7D0(Unk12E760 *p, s8 v) {
     p->unk158 = v;
 }
 
-static inline ListNode *ListNext(List *l) {
-    ListNode *n = l->cur;
-
-    if (n == NULL) {
-        return NULL;
-    }
-    l->cur = n->next;
-    return n;
-}
-
 void func_0012E7D8(void) {
-    List *l = &D_00359710;
-    ListNode *n;
-
-    l->cur = l->head;
-    while ((n = ListNext(l)) != NULL) {
-        ListRemove(l, n);
-    }
-    l->count = 0;
-    l->head = NULL;
-    l->cur = NULL;
-    l->unk8 = 0;
+    ListClear(&D_00359710);
 }

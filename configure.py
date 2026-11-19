@@ -79,7 +79,7 @@ def write_ninja(objs: list[str]) -> None:
     w(f"cflags = {CFLAGS}\n")
     w(f"asflags = {ASFLAGS}\n\n")
 
-    w("rule as\n  command = ${cross}as $asflags -o $out $in && ${cross}objcopy --set-section-alignment .text=8 $out\n  description = AS $in\n\n")
+    w("rule as\n  command = ${cross}as $asflags -o $out $in && ${cross}objcopy --set-section-alignment .text=$textalign $out\n  description = AS $in\n\n")
     # C: original compiler emits asm, which modern GNU as assembles for r5900.
     w(
         "rule cc\n"
@@ -106,6 +106,13 @@ def write_ninja(objs: list[str]) -> None:
         rule = "as" if src.suffix == ".s" else "cc"
         dep = " | tools/eecc.py" if rule == "cc" else ""
         w(f"build {obj}: {rule} {src}{dep}\n")
+        if rule == "as":
+            # Splat asm objects are named by ROM offset. A segment that starts
+            # on a 4-byte boundary (e.g. a handwritten .s module) must not be
+            # padded to 8.
+            m = re.search(r"/([0-9A-F]{6})(?:\.\w+)*\.s$", src.as_posix())
+            align = 4 if m and int(m.group(1), 16) % 8 else 8
+            w(f"  textalign = {align}\n")
 
     elf = f"build/{BASENAME}.elf"
     w(f"\nbuild {elf}: ld {' '.join(objs)} | {LD_SCRIPT}\n  ldscript = {LD_SCRIPT}\n")

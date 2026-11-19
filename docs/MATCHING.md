@@ -10,6 +10,7 @@ you find more.
 .venv/bin/python tools/matchcheck.py src/tu.c         # per-function MATCH/DIFF
 .venv/bin/python tools/matchcheck.py src/tu.c -d func_XXXXXXXX   # side-by-side
 .venv/bin/python tools/variants.py src/tu.c func_XXXXXXXX variants.c  # try many bodies
+.venv/bin/python tools/permute.py src/tu.c func_XXXXXXXX FIRST LAST   # reorder lines FIRST..LAST
 .venv/bin/python tools/xref.py --rodata 0x47B100 0x47B300   # rodata users (TU order)
 ninja                                                 # whole image must still match
 ```
@@ -76,6 +77,12 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
   `struct {...}` and the typedef name; after the name it's ignored.
 - **One `if` per condition:** a chain of separate `if (...) return 1;` statements gives a
   different block layout from one `||` condition.
+- **Casting a call result:** `D_x = (u8)f();` loads `%hi(D_x)` into a saved register before
+  the call. Plain `D_x = f();` loads it after.
+- **Handwritten modules:** splat marks some functions `/* Handwritten function */`. These
+  use VU0 macro instructions, `addi`, and `$at` stores. Leave them as an `asm` segment.
+  Their segment may start on a 4-byte boundary; `configure.py` then gives the object
+  4-byte alignment.
 - **`ABS()` macro:** `d < 0 ? -d : d` gives retail's duplicated compare branches.
 - **Local `const` tables:** a local `s8 tbl[] = {...}` puts the initializer in the TU's
   `.rodata` (`ldl`/`ldr` + `sdl`/`sdr` copy to the stack). Give the TU a `.rodata`
