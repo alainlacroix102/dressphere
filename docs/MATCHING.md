@@ -155,6 +155,18 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
 - **Long store sequences:** `tools/permute.py --climb` finds the source order of 10–20
   independent stores. `func_001321D0` only needed one store moved to the end.
 
+- **One variable, one register:** gcc 2.9 gives each local a single register for its
+  whole life. If retail keeps a pointer in a temp register in one stretch and a saved
+  register in another, use a separate variable for each (`w`/`c`/`g` in
+  `func_00132490`).
+- **Call results as arguments:** `printf(fmt, f())` loads `fmt` into a saved register before
+  the call (gcc may hoist it far up). `r = f(); printf(fmt, r);` loads it after. Retail
+  `func_00132490` uses both forms.
+- **Signed range checks:** `r >= 0 && r < 7` is folded into one `sltiu`. Retail's
+  `bltz` + `slti` came from a `switch` with `case 1: ... case 6:`.
+- **`__DATE__`/`__TIME__`:** spell the retail string out (`"Aug 29 2003  20:13:32"`);
+  the host preprocessor would substitute today's date.
+
 ## Assembler differences (handled in `tools/eecc.py`)
 
 - `move` encodes as `daddu`, not `or`.

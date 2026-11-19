@@ -5,6 +5,22 @@
  * code shares the status struct with the POPSTATUS functions. Decompiled so
  * far: 0x1305D0-0x130FE8. */
 
+/* FFXCONFIG block (0x40 bytes) at D_004AB7C0. */
+typedef struct {
+    /* 0x00 */ u8 pad0[8];
+    /* 0x08 */ s8 unk8;  /* printf */
+    /* 0x09 */ s8 unk9;  /* menu debug */
+    /* 0x0A */ s8 unkA;  /* cd read */
+    /* 0x0B */ s8 unkB;  /* DVD printf cut */
+    /* 0x0C */ s8 unkC;  /* yi assert (on-screen log) */
+    /* 0x0D */ s8 unkD;  /* music mute */
+    /* 0x0E */ s8 unkE;  /* boot type */
+    /* 0x0F */ s8 unkF;  /* movie read */
+    /* 0x10 */ s8 unk10; /* thread mode */
+    /* 0x11 */ u8 unk11[8];
+    /* 0x19 */ u8 pad19[0x40 - 0x19];
+} FfxConfig;
+
 typedef struct {
     /* 0x000 */ u16 unk0[6];
     /* 0x00C */ u8 unkC;
@@ -148,6 +164,10 @@ typedef struct {
     /* 0x0C */ void *unkC;
     /* 0x10 */ s32 (*open)(s32 grp);
     /* 0x14 */ s32 (*size)(s32 idx);
+    /* 0x18 */ void *pad18[(0x7C - 0x18) / 4];
+    /* 0x7C */ void (*unk7C)(s32);
+    /* 0x80 */ void *unk80;
+    /* 0x84 */ void (*unk84)(s32);
 } TkFileIf;
 
 extern TkFileIf *func_00172340(void);
@@ -185,6 +205,23 @@ extern void func_001536B0(void);
 extern void func_001589C8(void);
 extern s32 func_00145618(void);
 extern void func_001CF738(s32);
+extern s32 func_2074968(void);
+extern void func_0031AF58(void);
+extern void func_00313750(void);
+extern void func_00314DF8(s32, s32);
+extern void func_0031B770(void);
+extern void func_00315440(s32);
+extern void func_0031BDC0(const char *, void *, s32);
+extern void func_00175380(s32);
+extern void func_00317560(s32);
+extern void func_00172330(void);
+extern void func_00217230(void);
+extern void func_0031AE68(void);
+extern void func_001533F0(void);
+extern void func_00317950(const char *);
+extern s32 func_0031C720(void);
+extern void func_00317988(s32);
+extern void func_002356F8(void);
 
 TkStatus *func_00130A40(void);
 void func_00130A88(s32 a, s32 b);
@@ -238,8 +275,8 @@ u8 func_00130690(void) {
     return D_004761C8;
 }
 
-u8 *func_001306A0(void) {
-    return D_004AB7C0;
+FfxConfig *func_001306A0(void) {
+    return (FfxConfig *)D_004AB7C0;
 }
 
 void func_001306B0(s32 id) {
@@ -827,7 +864,7 @@ void func_001318C0(void) {
 }
 
 void func_001318C8(s32 v) {
-    func_001306A0()[0xC] = v;
+    func_001306A0()->unkC = v;
 }
 
 void func_001318F0(void) {
@@ -848,7 +885,7 @@ void func_00131938(const char *s) {
     char line[0x100];
     s32 n;
 
-    if (((s8 *)func_001306A0())[0xC]) {
+    if (func_001306A0()->unkC) {
         func_0031D4C8(0, 0);
         func_00340B10(name, s, 0x17);
         for (n = func_00340740(s); n < 0x17; n++) {
@@ -1176,4 +1213,130 @@ void func_00132458(void) {
 
 void func_00132488(void) {
     func_00132458();
+}
+
+void func_00132490(void) {
+    FfxConfig *c;
+    FfxConfig *w;
+    FfxConfig *g;
+    TkFileIf *f;
+    s32 i;
+    s32 r;
+
+    func_00130FB8(0x20);
+    func_0033ED50("TK:TK INIT\n");
+    func_0033ED50("TK:TK INIT START\n");
+    func_00131A68();
+    func_0033ED50("TK:InitWork Done\n");
+    if (func_0031C5E8()) {
+        r = func_2074968();
+        func_0033ED50("TK:TkDeci2:Init result%d\n", r);
+        func_0031AF58();
+    }
+    func_00313750();
+    func_001313B8();
+    func_00314DF8(0, 0);
+    func_00314DF8(1, 0);
+    func_0033ED50("TK:Read Controler Done\n");
+    func_0031B770();
+    func_00315440(2);
+    func_0033EBE0(func_001306A0(), 0, 0x40);
+    w = func_001306A0();
+    w->unkE = D_00473A58;
+    w->unkF = 1;
+    w->unk10 = 1;
+    for (i = 0; i < 8; i++) {
+        w->unk11[i] = 0;
+    }
+    w->unk11[0] |= 2;
+    w->unk11[2] |= 0x20;
+    w->unk11[6] |= 2;
+    w->unk11[3] |= 0xA;
+    if (!func_00130650()) {
+        func_0033ED50("ReadConfig Start\n");
+        func_0031BDC0("FFXCONFIG", func_001306A0(), 0x40);
+        func_0033ED50("ReadConfig Done\n");
+    }
+    c = func_001306A0();
+    func_00175380(c->unk8);
+    func_0033ED50("======================================================\n");
+    func_0033ED50("\tFFXCONF:printf        :%d\n", c->unk8);
+    func_0033ED50("\tFFXCONF:cd read       :%d\n", c->unkA);
+    func_0033ED50("\tFFXCONF:movie read    :%d\n", c->unkF);
+    func_0033ED50("\tFFXCONF:DVD printf cut:%d\n", c->unkB);
+    func_0033ED50("\tFFXCONF:Menu Debug    :%d\n", c->unk9);
+    func_0033ED50("\tFFXCONF:yi Assert     :%d\n", c->unkC);
+    func_0033ED50("\tFFXCONF:MusicMute     :%d\n", c->unkD);
+    func_0033ED50("\tFFXCONF:BootType      :%d\n", c->unkE);
+    func_0033ED50("\tFFXCONF:ThreadMode    :%d\n", c->unk10);
+    func_0033ED50("======================================================\n");
+    func_00317560(c->unkD);
+    D_00473A58 = c->unkE;
+    func_00131AF8();
+    func_00172330();
+    f = func_00172340();
+    g = func_001306A0();
+    f->unk7C(g->unkA);
+    f->unk84(g->unkF);
+    func_00131938("MAP INFO");
+    func_00131890();
+    func_00131938("TO INIT");
+    func_0033ED50("TK:TO Init Start\n");
+    func_00217230();
+    func_0033ED50("TK:TO Init Done\n");
+    func_001318C0();
+    func_0033ED50("TK:TO Read Init File\n");
+    if (func_0031C5E8()) {
+        func_0033ED50("TK:Enable Debug Font(S-JIS)\n");
+        func_0031AE68();
+        func_0033ED50("TK:Enable Debug Font(S-JIS) Done.\n");
+    }
+    func_00131938("ATEL INIT");
+    func_0033ED50("TK:ATEL Init Total\n");
+    func_001533F0();
+    func_0033ED50("TK:ATEL Init Done.\n");
+    func_00131938("EVJMP");
+    func_00132400();
+    r = func_0031C688();
+    switch (r) {
+        case 0:
+            func_00317950("/ffx2/proj/sound");
+            break;
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+            func_00317950("/ffx2/proj/sound/us");
+            break;
+    }
+    switch (func_0031C720()) {
+        case 0:
+            func_00317988(0);
+            break;
+        case 1:
+            func_00317988(1);
+            break;
+    }
+    func_00131938("INIT SOUND");
+    func_00132048();
+    func_00131938("INIT VOICE");
+    func_00131A20();
+    func_00131938("HDD");
+    func_001320F8();
+    func_00131938("VIBRATE");
+    func_00132488();
+    func_00131938("ABMAP");
+    func_00131938("MENU ICON");
+    func_002356F8();
+    func_001305D0();
+    func_0033ED50("TK:Now Video:%d\n", func_0031C720());
+    func_00131938("TK INIT DONE");
+}
+
+/* Build timestamp, originally __DATE__ "  " __TIME__ (spelled out so the
+ * host preprocessor doesn't substitute today's date). */
+const char *func_00132908(void) {
+    return "Aug 29 2003  20:13:32";
 }
