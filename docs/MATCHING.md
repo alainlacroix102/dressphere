@@ -77,6 +77,9 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
   `struct {...}` and the typedef name; after the name it's ignored.
 - **One `if` per condition:** a chain of separate `if (...) return 1;` statements gives a
   different block layout from one `||` condition.
+- **`return f();` is not a tail call:** this gcc emits `j f` only for a call whose value is
+  not returned. If retail does `jal f` and then returns `$v0`, write `return f(...);` with a
+  non-void return type (`func_001308C8`, `func_00130A40`).
 - **Casting a call result:** `D_x = (u8)f();` loads `%hi(D_x)` into a saved register before
   the call. Plain `D_x = f();` loads it after.
 - **Handwritten modules:** splat marks some functions `/* Handwritten function */`. These

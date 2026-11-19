@@ -81,8 +81,8 @@ segments:
       - [0x02E888, asm, cod/02E888]
       - [0x02F8D8, c, code_12F8D8]   # provisional TU (repeats the list clear in code_12D060)
       - [0x02F9D4, asm, cod/02F9D4]  # handwritten VU0 routines
-      - [0x0305D0, c, code_1305D0]   # provisional TU, getters/setters
-      - [0x030770, asm, cod/030770]
+      - [0x0305D0, c, tklib]   # start is a guess; end not known yet
+      - [0x030AE0, asm, cod/030AE0]
       - [0x1F2BA0, c, code_2F2BA0]   # provisional TU, boundaries unknown
       - [0x1F2F58, asm, cod/1F2F58]
       - [0x251480, data, cod/251480] # .data
@@ -90,6 +90,8 @@ segments:
       - [0x37B190, .rodata, code_12AB30]
       - [0x37B1B0, .rodata, id/map_id]
       - [0x37B2D0, rodata, cod/37B2D0]
+      - [0x37B3F8, .rodata, tklib]
+      - [0x37B470, rodata, cod/37B470]
       - [0x390580, vutext, cod/390580] # .vutext
       - [0x396D00, gcc_except_table, cod/396D00] # .gcc_except_table
       - [0x396E00, lit4, cod/396E00] # .lit4
