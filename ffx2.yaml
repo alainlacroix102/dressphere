@@ -78,7 +78,7 @@ segments:
       - [0x02AB30, c, code_12AB30]   # provisional TU, boundaries unknown
       - [0x02B2D0, asm, cod/02B2D0]
       - [0x1F2DF8, c, code_2F2DF8]   # provisional TU, boundaries unknown
-      - [0x1F2E48, asm, cod/1F2E48]
+      - [0x1F2F58, asm, cod/1F2F58]
       - [0x251480, data, cod/251480] # .data
       - [0x378580, rodata, cod/378580] # .rodata
       - [0x37B190, .rodata, code_12AB30]

@@ -40,6 +40,8 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
   return value is live. The function probably returns it.
 - **Bit tests on 64-bit fields:** `ld; dsll N; dsra32 0; andi 1` is `(s32)(x >> (32-N)) & 1`
   on an `s64` field.
+- **Byte-sized booleans:** `nor; andi 1` computed in place in a saved register comes from
+  storing `~a & 1` into a `u8` local. An `s32` local gets a different register.
 - **`ABS()` macro:** `d < 0 ? -d : d` gives retail's duplicated compare branches.
 - **Local `const` tables:** a local `s8 tbl[] = {...}` puts the initializer in the TU's
   `.rodata` (`ldl`/`ldr` + `sdl`/`sdr` copy to the stack). Give the TU a `.rodata`
