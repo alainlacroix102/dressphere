@@ -15,6 +15,10 @@ standardise on `991111` and will revisit if a function only matches with another
    - prepend `.set gp=64`
    - rewrite `move a,b` as `daddu a,b,$0`. The 1999 EE binutils encoded `move` that way;
      modern gas emits `or`
+   - in `.set reorder` code, emit an FP compare directly followed by `bc1t`/`bc1f` as an
+     explicit noreorder `c.cond; bc1x; nop`. Modern gas inserts a compare→branch hazard
+     `nop` for r5900 that the EE assembler did not (`.set mips4` was tried; it also drops
+     `nop`s that retail keeps)
 4. Modern `mips-linux-gnu-as -march=r5900 -mabi=32`. The same assembler handles splat's
    `INCLUDE_ASM` output in the same file
 5. `objcopy --set-section-alignment .text=8`. Modern MIPS gas forces 16-byte `.text`
@@ -34,7 +38,13 @@ defines against the retail binary, instruction by instruction, with relocated fi
 `--all-compilers` runs every installed `ee-gcc*`.
 
 Functions still pulled in through `INCLUDE_ASM` always report MATCH. Only C definitions are
-real tests.
+real tests. Other options:
+
+- `-d FUNC`: side-by-side disassembly
+- `-D NON_MATCHING`: test parked drafts
+
+`tools/variants.py` tries alternative bodies for one function. `tools/m2c_draft.py FUNC`
+drafts C with m2c, using the TU as context.
 
 ## How the compiler was identified
 

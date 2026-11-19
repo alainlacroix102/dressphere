@@ -28,8 +28,11 @@ COMPILERS = ROOT / "tools/compilers"
 DEFAULT_CC = eecc.DEFAULT_CC
 DEFAULT_FLAGS = eecc.DEFAULT_FLAGS
 
+DEFINES: tuple[str, ...] = ()
+
+
 def compile_c(src: Path, compiler: str, flags: str, out_o: Path) -> None:
-    eecc.compile_c(src, out_o, compiler, flags)
+    eecc.compile_c(src, out_o, compiler, flags, defines=DEFINES)
 
 
 def known_symbols() -> dict[str, int]:
@@ -103,14 +106,68 @@ def check(src: Path, compiler: str, flags: str, verbose: bool) -> bool:
     return ok_all
 
 
+def disasm(path: Path, start: int | None = None, stop: int | None = None,
+           func: str | None = None) -> list[str]:
+    cmd = ["mips-linux-gnu-objdump", "-d", "-r", "-z", "-EL", "-mmips:5900",
+           "-M", "reg-names=numeric"]
+    if start is not None:
+        cmd += [f"--start-address={start:#x}", f"--stop-address={stop:#x}"]
+    out = subprocess.run(cmd + [str(path)], capture_output=True, text=True).stdout
+    lines, active = [], start is not None
+    for line in out.splitlines():
+        if func and re.match(r"[0-9a-f]+ <(\w+)>:", line):
+            active = line.endswith(f"<{func}>:")
+            continue
+        if not active:
+            continue
+        if m := re.match(r"\s+[0-9a-f]+:\s+[0-9a-f]{8}\s+(.*)", line):
+            lines.append(re.sub(r"\s+", " ", m.group(1)).split(" <")[0])
+        elif m := re.match(r"\s+[0-9a-f]+: (R_MIPS_\w+)\s+(\S+)", line):
+            lines[-1] += f"  [{m.group(2)}]"
+    return lines
+
+
+def show_diff(src: Path, compiler: str, flags: str, func: str) -> None:
+    addr = address_of(func, known_symbols())
+    with tempfile.TemporaryDirectory() as td:
+        obj = Path(td) / "t.o"
+        compile_c(src, compiler, flags, obj)
+        ours = disasm(obj, func=func)
+    theirs = disasm(ROOT / "iso/files/SLUS_206.72", addr, addr + 4 * len(ours))
+    for i in range(max(len(ours), len(theirs))):
+        a = ours[i] if i < len(ours) else ""
+        b = theirs[i] if i < len(theirs) else ""
+        def norm(s: str) -> str:
+            if "  [" in s:  # relocated operand: immediate isn't comparable
+                s = re.sub(r"-?(0x)?[0-9a-f]+(?=\(|$)", "R", s.split("  [")[0])
+            elif re.search(r"\$\d+,-?\d+\(\$\d+\)$|lui ", s) and "R" not in s:
+                pass
+            if re.match(r"(b\w*|j|jal)\s", s):  # branch/jump targets aren't comparable
+                s = re.sub(r",?[0-9a-fx]+$", "", s)
+            return re.sub(r"0x[0-9a-f]+", "X", s)
+        bb = b
+        if "  [" in a and re.search(r"(lui|addiu|lw|sw|lwc1|swc1|lb|lh|lbu|lhu|sb|sh|ld|sd) ", b):
+            bb = re.sub(r"-?(0x)?[0-9a-f]+(?=\(|$)", "R", b) + "  [x]"
+        same = norm(a) == norm(bb)
+        print(f"{'  ' if same else '! '}{a:<44.44} | {b}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("src", type=Path)
     ap.add_argument("-c", "--compiler", default=DEFAULT_CC)
     ap.add_argument("-f", "--flags", default=DEFAULT_FLAGS)
     ap.add_argument("--all-compilers", action="store_true")
+    ap.add_argument("-D", dest="defines", action="append", default=[],
+                    help="extra cpp define, e.g. -D NON_MATCHING")
+    ap.add_argument("-d", "--diff", metavar="FUNC", help="side-by-side disassembly for FUNC")
     args = ap.parse_args()
     src = args.src.resolve()
+    global DEFINES
+    DEFINES = tuple(args.defines)
+    if args.diff:
+        show_diff(src, args.compiler, args.flags, args.diff)
+        return
     if args.all_compilers:
         for d in sorted(COMPILERS.glob("ee-gcc*")):
             if list((d / "lib/gcc-lib/ee").glob("*/cc1")):

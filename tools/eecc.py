@@ -43,19 +43,49 @@ def cc1_path(name: str) -> Path:
     return found[0]
 
 
+FCMP_RE = re.compile(r"^\s*c\.\w+\.s\s")
+BC1_RE = re.compile(r"^\s*bc1[tf]l?\s")
+
+
 def fix_asm(text: str) -> str:
+    """Make modern gas output what the 1999 EE assembler did.
+
+    - `move` -> `daddu` (old binutils' 64-bit encoding)
+    - In `.set reorder` code, modern gas puts a hazard nop between an FP
+      compare and the following bc1t/bc1f; the EE assembler didn't (only the
+      delay-slot nop). Emit that pair explicitly under noreorder.
+    """
+    lines = text.splitlines()
     out = ["\t.set gp=64"]
-    for line in text.splitlines():
+    reorder = True
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+        if stripped.startswith(".set\tnoreorder") or stripped == ".set noreorder":
+            reorder = False
+        elif stripped.startswith(".set\treorder") or stripped == ".set reorder":
+            reorder = True
         m = MOVE_RE.match(line)
         if m:
             line = f"{m.group(1)}daddu\t{m.group(2)},{m.group(3)},$0"
+        if reorder and FCMP_RE.match(line):
+            j = i + 1
+            while j < len(lines) and lines[j].strip().startswith("#"):
+                j += 1
+            if j < len(lines) and BC1_RE.match(lines[j]):
+                out += ["\t.set noreorder", line, lines[j], "\tnop", "\t.set reorder"]
+                i = j + 1
+                continue
         out.append(line)
+        i += 1
     return "\n".join(out) + "\n"
 
 
 def compile_c(src: Path, out_o: Path, compiler: str = DEFAULT_CC,
-              flags: str = DEFAULT_FLAGS, keep_asm: Path | None = None) -> None:
-    pre = subprocess.run(["cpp", *CPP_FLAGS, str(src)], cwd=ROOT,
+              flags: str = DEFAULT_FLAGS, keep_asm: Path | None = None,
+              defines: tuple[str, ...] = ()) -> None:
+    pre = subprocess.run(["cpp", *CPP_FLAGS, *(f"-D{d}" for d in defines), str(src)], cwd=ROOT,
                          capture_output=True, text=True)
     if pre.returncode:
         sys.exit(pre.stderr)
