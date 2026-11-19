@@ -131,6 +131,16 @@ Functions that won't match stay `INCLUDE_ASM`. Keep the best C draft under
   (`char *names[3]` in `func_00131AF8`). The initializer's strings come before the
   table in `.rodata`.
 
+- **Register choice after a call:** if a loop compare uses `$v1` where ours uses `$v0`, a
+  callee in the loop returns a value (declare it `s32`, even when the result is ignored).
+  `func_00131DF0` matched once `func_002534E0` returned `s32`.
+- **Defaults in the `else`:** `if (load) { buf = ...; size = ...; } else { buf = 0; size = 0; }`
+  puts `buf = 0` in the branch delay slot. Setting the defaults before the `if` hoists them
+  (`func_00131E68`).
+- **Empty string defaults:** an 8-byte zero entry in `.rodata` just before a function's
+  strings is a `""` literal (`char *name = "";` in `func_001320F8`). gcc reuses one copy for
+  every `""` in the function.
+
 ## Assembler differences (handled in `tools/eecc.py`)
 
 - `move` encodes as `daddu`, not `or`.

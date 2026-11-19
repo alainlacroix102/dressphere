@@ -115,7 +115,7 @@ extern void func_0015C090(const char *); /* debug marker */
 /* File access interface returned by func_00172340. */
 typedef struct {
     /* 0x00 */ s32 (*read)(s32 idx, void *buf, s32, s32);
-    /* 0x04 */ void *unk4;
+    /* 0x04 */ s32 (*sector)(s32);
     /* 0x08 */ s32 (*sync)(s32);
     /* 0x0C */ void *unkC;
     /* 0x10 */ s32 (*open)(s32 grp);
@@ -139,6 +139,19 @@ extern void func_00315598(void);
 extern void func_001757A8(char **);
 extern void func_001741A8(s32);
 extern void func_0016B4C0(s32);
+extern void func_00319280(void *, s32);
+extern void func_0031A7D0(s32);
+extern void func_00254258(void *);
+extern s32 func_002534E0(s32);
+extern void func_002543E8(s32, s32);
+extern void func_00253B78(void *, s32, s32);
+extern void func_00253BF0(void *, s32, s32);
+extern void func_0031A0B0(void);
+extern void func_0031A028(s32);
+extern char *func_00176868(s32);
+extern void func_00253C68(char *);
+extern void func_00253C98(char *);
+extern s8 D_00473A58;
 
 TkStatus *func_00130A40(void);
 void func_00130A88(s32 a, s32 b);
@@ -868,4 +881,174 @@ void func_00131AF8(void) {
         func_0033ED50("TK:InitStartMap\n");
         func_00130CD8();
     }
+}
+
+void func_00131C00(void) {
+    s32 size;
+    void *buf;
+
+    func_00131938("SHOUT 1");
+    func_0033ED50("TK:TkInitReadSoundShoutFile\n");
+    size = func_00131838(0x18, 5);
+    buf = func_001314A8(0x18, 5);
+    func_00131938("SHOUT 2");
+    func_0033ED50("TK:Shout File:%p:%d:\n", buf, size);
+    func_00319280(buf, size);
+    func_00131938("SHOUT 3");
+    func_0031A7D0(1);
+    if (buf) {
+        func_001309A0((s32)buf);
+    }
+    func_0033ED50("TK:TkInitReadSoundShoutFile Done\n");
+    func_00131938("SHOUT 4");
+}
+
+void func_00131CC0(void) {
+    s32 size;
+
+    func_00131938("BATTLE MUSIC 1");
+    func_0033ED50("TK:TkInitReadSoundBattleMusicFile\n");
+    size = func_00131838(0x26, 0xE);
+    func_0033ED50("TK:Read Battle Music File(no:%d size:%d)\n", 0xE, size);
+    if (size > 0x7FFF) {
+        func_0033ED50("TK:!!!!!!!!!!!!!!!!!!!!!!!!!!!! Battle Music Score too large.!!!!!!!!!!!!!!!!!!!!!!!!!!!! \n");
+    }
+    func_00131938("BATTLE MUSIC 2");
+    func_00131628(0x26, 0xE, func_001307F0());
+    D_004AF800 = size;
+    func_0033ED50("TK:TkInitReadSoundBattleMusicFile Done\n");
+}
+
+void func_00131D68(void) {
+    void *buf;
+
+    func_00131938("SND SAVE INIT");
+    func_00131838(0x18, 0);
+    buf = func_001314A8(0x18, 0);
+    func_00131938("SND BLOCK");
+    func_00254258(buf);
+    func_00131938("SND BLOCK1");
+    func_0031A7D0(1);
+    func_002534E0(1);
+    func_00131938("SEND SYNC DONE");
+    func_001309A0((s32)buf);
+}
+
+void func_00131DF0(void) {
+    s32 i;
+
+    func_00131938("SND SAVE STB");
+    func_0033ED50("TK:TkInitSoundSave\n");
+    for (i = 0; i < 0x62; i++) {
+        func_002543E8(i, 1);
+        func_002534E0(1);
+    }
+    func_00131938("SND SAVE STB DONE");
+    func_0033ED50("TK:TkInitSoundSave Done\n");
+}
+
+void func_00131E68(s32 load) {
+    void *buf;
+    s32 size;
+    s32 sector;
+    TkFileIf *f;
+
+    if (D_0048CEA1) {
+        return;
+    }
+    func_00131938("INIT WAVE INFO READ FILE");
+    if (load) {
+        buf = func_001314A8(0x2C, 1);
+        size = func_00131838(0x2C, 1);
+    } else {
+        buf = 0;
+        size = 0;
+    }
+    func_00131938("INIT WAVE REGIST WAVE");
+    f = func_00172340();
+    f->open(0x2C);
+    sector = f->sector(0);
+    func_0033ED50("TK:Sound Get Sector Pos:%d\n", sector);
+    func_00131938("INIT WAVE TRANS TO IOP");
+    func_00253B78(buf, size, sector);
+    func_00131938("INIT WAVE TRANS DONE");
+    if (buf) {
+        func_001309A0((s32)buf);
+    }
+}
+
+void func_00131F60(s32 load) {
+    void *buf;
+    s32 size;
+    s32 sector;
+    TkFileIf *f;
+
+    if (D_0048CEA1) {
+        return;
+    }
+    func_00131938("MUSIC INFO READ FILE");
+    if (load) {
+        buf = func_001314A8(0x2D, 1);
+        size = func_00131838(0x2D, 1);
+    } else {
+        buf = 0;
+        size = 0;
+    }
+    f = func_00172340();
+    f->open(0x2D);
+    sector = f->sector(0);
+    func_0033ED50("TK:Sound Music Get Sector Pos:%d\n", sector);
+    func_00131938("MUSIC INFO TRANS TO IOP");
+    func_00253BF0(buf, size, sector);
+    func_00131938("MUSIC INFO TRANS DONE");
+    if (buf) {
+        func_001309A0((s32)buf);
+    }
+}
+
+void func_00132048(void) {
+    func_00131938("SND INIT");
+    func_0031A0B0();
+    func_00131938("WAVE INFO");
+    func_00131E68(1);
+    func_00131938("WAVE WITH SET");
+    func_0031A028(0);
+    func_00131938("SOUND SAVE");
+    func_00131D68();
+    func_00131938("SOUND SAVE 2");
+    func_00131DF0();
+    func_00131938("MUSIC INFO");
+    func_00131F60(1);
+    func_00131938("SHOUT");
+    func_00131C00();
+    func_00131938("BATTLE");
+    func_00131CC0();
+}
+
+void func_001320F8(void) {
+    char *name = "";
+
+    func_0033ED50("TK:TkInitWaveInfoHdd\n");
+    if (D_00473A58) {
+        name = func_00176868(0x2C);
+    }
+    func_0033ED50("TK:HDD/WaveFilename:%s\n", name);
+    func_00253C68(name);
+    name = "";
+    func_0033ED50("TK:TkInitSoundSetWaveInfo Done.\n");
+    func_0033ED50("TK:TkInitMusicInfoHdd\n");
+    if (D_00473A58) {
+        name = func_00176868(0x2D);
+    }
+    func_0033ED50("TK:HDD/MusicFilename:%s\n", name);
+    func_00253C98(name);
+    func_0033ED50("TK:TkInitSoundSetMusicInfo Done.\n");
+}
+
+void func_001321C0(void) {
+    func_00131E68(0);
+}
+
+void func_001321C8(void) {
+    func_001321C0();
 }
